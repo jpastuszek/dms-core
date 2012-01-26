@@ -37,11 +37,15 @@ class Message
 	end
 
 	def header
-		"#{data_type}/#{topic}\n#{encoding}\n#{version}\n\n"
+		"#{data_type}/#{topic}\n#{encoding}\n#{version}"
+	end
+
+	def body
+		@body.to_msgpack
 	end
 
 	def to_s
-		header + @body.to_msgpack
+		header + "\n\n" + body
 	end
 end
 
