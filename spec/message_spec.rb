@@ -1,4 +1,5 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
+require 'msgpack'
 
 describe Message do
 	subject do
@@ -63,6 +64,58 @@ msgpack
 		m[:num].should == 123
 		m[:bool].should == true
 		m[:arr].should == [1, 2]
+	end
+
+	describe "deserialization error" do
+		describe Message::DeserializationError::MissingHeaderBodyDelimiterError do
+			it 'should be raised if \n\n is not in message' do
+				expect {
+					Message.load("RawDatum/\n0\nmsgpack\n#{subject.body}")
+				}.to raise_error Message::DeserializationError::MissingHeaderBodyDelimiterError
+			end
+		end
+
+		describe Message::DeserializationError::BadHeaderError do
+			it 'should be raised if header value is missing' do
+				expect {
+					Message.load("RawDatum/\nmsgpack\n\n#{subject.body}")
+				}.to raise_error Message::DeserializationError::BadHeaderError
+			end
+
+			it 'should be raised if header topic delimiter is not /' do
+				expect {
+					Message.load("RawDatum\ntest\n0\nmsgpack\n\n#{subject.body}")
+				}.to raise_error Message::DeserializationError::BadHeaderError
+
+				expect {
+					Message.load("RawDatum-test\n0\nmsgpack\n\n#{subject.body}")
+				}.to raise_error Message::DeserializationError::BadHeaderError
+			end
+		end
+
+		describe Message::DeserializationError::UnsupportedEncodingError do
+			it "should be raised when encoding is not supported" do
+				expect {
+					Message.load("RawDatum/\n0\nbogous\n\n#{subject.body}")
+				}.to raise_error Message::DeserializationError::UnsupportedEncodingError
+			end
+		end
+
+		describe Message::DeserializationError::BodyDecodingError do
+			it "should be raised when encoded body cannot be decoded" do
+				expect {
+					Message.load("RawDatum/\n0\nmsgpack\n\nXXX#{subject.body}")
+				}.to raise_error Message::DeserializationError::BodyDecodingError
+			end
+		end
+
+		describe Message::DeserializationError::BodyNotHashError do
+			it "should be raised when encoded body decodes to something that is not a Hash" do
+				expect {
+					Message.load("RawDatum/\n0\nmsgpack\n\n#{[:a, :b, :c].to_msgpack}")
+				}.to raise_error Message::DeserializationError::BodyNotHashError, 'expeced body to be a Hash, got: ["a", "b", "c"]'
+			end
+		end
 	end
 end
 
