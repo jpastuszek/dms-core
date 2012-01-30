@@ -117,5 +117,19 @@ msgpack
 			end
 		end
 	end
+
+	describe "serialization error" do
+		describe Message::SerializationError::BodyEncodingError do
+			it "should be raised if message body contains unserializable data types" do
+				m = Message.new('RawDatum', 'id123') do |body|
+					body[:time] = Time.now
+				end
+
+				expect {
+					m.to_s
+				}.to raise_error Message::SerializationError::BodyEncodingError
+			end
+		end
+	end
 end
 

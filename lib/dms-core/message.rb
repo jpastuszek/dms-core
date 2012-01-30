@@ -1,6 +1,14 @@
 require 'msgpack'
 
 class Message
+	class SerializationError < IOError
+		class BodyEncodingError < SerializationError
+			def initialize(body, error)
+				super "failed to encode message body: #{body.inspect}: #{error.class}: #{error.message}"
+			end
+		end
+	end
+
 	class DeserializationError < IOError
 		class MissingHeaderBodyDelimiterError < DeserializationError
 			def initialize(packet)
@@ -10,7 +18,7 @@ class Message
 
 		class BodyDecodingError < DeserializationError
 			def initialize(encoding, error, body)
-				super "failed to decode body encoded with '#{encoding}': #{error}: #{error.message}: #{body.inspect}" 
+				super "failed to decode body encoded with '#{encoding}': #{error.class}: #{error.message}: #{body.inspect}" 
 			end
 		end
 	
@@ -88,7 +96,11 @@ class Message
 	end
 
 	def body
-		@body.to_msgpack
+		begin
+			@body.to_msgpack
+		rescue => e
+			raise SerializationError::BodyEncodingError.new(@body, e)
+		end
 	end
 
 	def to_s
