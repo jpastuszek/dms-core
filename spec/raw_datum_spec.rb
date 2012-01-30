@@ -1,8 +1,8 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
-describe DataType::RawDatum do
+describe RawDatum do
 	subject do
-		DataType::RawDatum.new('Memory usage', 'RAM', 'cache', 123)
+		RawDatum.new('Memory usage', 'RAM', 'cache', 123)
 	end
 
 	it "takes type, group, component and value" do
@@ -35,7 +35,9 @@ describe DataType::RawDatum do
 	end
 
 	it "can be created from Message" do
-		dt = DataType::RawDatum.from_message(subject.to_message)
+		dt = DataType.from_message(subject.to_message)
+
+		dt.should be_a RawDatum
 		dt.type.should == 'Memory usage'
 		dt.group.should == 'RAM'
 		dt.component.should == 'cache'
