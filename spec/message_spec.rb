@@ -66,6 +66,20 @@ msgpack
 		m[:arr].should == [1, 2]
 	end
 
+	it "can be serialized and deserialized from splited header and body data" do
+		m = Message.load_split(subject.header, subject.body)
+
+		m.data_type.should == 'RawDatum'
+		m.topic.should == 'id123'
+		m.version.should == 0
+		m.encoding.should == 'msgpack'
+
+		m[:abc].should == 'xyz'
+		m[:num].should == 123
+		m[:bool].should == true
+		m[:arr].should == [1, 2]
+	end
+
 	describe "deserialization error" do
 		describe Message::DeserializationError::MissingHeaderBodyDelimiterError do
 			it 'should be raised if \n\n is not in message' do

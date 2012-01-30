@@ -78,6 +78,10 @@ class Message
 		end
 	end
 
+	def self.load_split(header, body)
+		self.load("#{header}\n\n#{body}")
+	end
+
 	def initialize(data_type, topic = '', version = 0, encoding = 'msgpack')
 		@data_type = data_type.to_s
 		@topic = topic.to_s
