@@ -23,11 +23,11 @@ class Message
 		end
 	end
 
-	def initialize(data_type, topic = '', encoding = 'msgpack', version = 0)
-		@data_type = data_type
-		@topic = topic
-		@encoding = encoding
-		@version = Integer(version)
+	def initialize(data_type, topic = '', version = 0, encoding = 'msgpack')
+		@data_type = data_type.to_s
+		@topic = topic.to_s
+		@version = version.to_i
+		@encoding = encoding.to_s
 		@body = {}
 		yield(@body)
 	end
@@ -37,7 +37,7 @@ class Message
 	end
 
 	def header
-		"#{data_type}/#{topic}\n#{encoding}\n#{version}"
+		"#{data_type}/#{topic}\n#{version}\n#{encoding}"
 	end
 
 	def body

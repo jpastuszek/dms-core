@@ -18,8 +18,8 @@ describe Message do
 		specify "to header data" do
 			subject.data_type.should == 'RawDatum'
 			subject.topic.should == 'id123'
-			subject.encoding.should == 'msgpack'
 			subject.version.should == 0
+			subject.encoding.should == 'msgpack'
 		end
 
 		specify "to body data" do
@@ -35,15 +35,15 @@ describe Message do
 			s = subject.to_s
 			s.start_with?(<<-EOM).should == true
 RawDatum/id123
-msgpack
 0
+msgpack
 
 			EOM
 			s.should include("xyz")
 		end
 
 		specify "of header only" do
-			subject.header.should == "RawDatum/id123\nmsgpack\n0"
+			subject.header.should == "RawDatum/id123\n0\nmsgpack"
 		end
 
 		specify "of body only" do
@@ -56,8 +56,8 @@ msgpack
 
 		m.data_type.should == 'RawDatum'
 		m.topic.should == 'id123'
-		m.encoding.should == 'msgpack'
 		m.version.should == 0
+		m.encoding.should == 'msgpack'
 
 		m[:abc].should == 'xyz'
 		m[:num].should == 123
