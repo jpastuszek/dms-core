@@ -31,6 +31,6 @@ class RawDatum < DataType
 		end
 	end
 
-	register(RawDatum)
+	register(self)
 end
 
