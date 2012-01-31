@@ -21,6 +21,20 @@ describe ZeroMQ do
 			message.component.should == 'cache'
 			message.value.should == 123
 		end
+
+		it "should raise errors on bad address" do
+				ZeroMQ.new do |zmq|
+					expect {
+						zmq.pull_bind('tcpX://127.0.0.1:2200') do |pull|
+						end
+					}.to raise_error ZeroMQError::OperationFailedError, "Unknown ZeroMQ error (errno 0)" # FIXME
+
+					expect {
+						zmq.push_connect('tcpX://127.0.0.1:2200') do |pull|
+						end
+					}.to raise_error ZeroMQError::OperationFailedError, "Unknown ZeroMQ error (errno 0)" # FIXME
+				end
+		end
 	end
 end
 

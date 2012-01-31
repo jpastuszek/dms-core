@@ -1,9 +1,13 @@
 require 'ffi-rzmq'
 
-module ZeroMQErrors
+module ZeroMQError
 	class OperationFailedError < IOError
 		def initialize
-			 super "Errno #{ZMQ::Util.errno}: #{ZMQ::Util.error_string}"
+			if ZMQ::Util.errno == 0
+				super "Unknown ZeroMQ error (errno 0)"
+			else
+				super "Errno #{ZMQ::Util.errno}: #{ZMQ::Util.error_string}"
+			end
 		end
 	end
 
@@ -20,10 +24,10 @@ module ZeroMQErrors
 end
 
 class ZeroMQ
-	include ZeroMQErrors
+	include ZeroMQError
 
 	class Sender
-		include ZeroMQErrors
+		include ZeroMQError
 
 		def initialize(socket)
 			@socket = socket
@@ -35,7 +39,7 @@ class ZeroMQ
 	end
 
 	class Receiver
-		include ZeroMQErrors
+		include ZeroMQError
 
 		def initialize(socket)
 			@socket = socket
