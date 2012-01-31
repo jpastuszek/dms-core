@@ -1,7 +1,7 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
-describe "logging" do
-	it "should log to STDERR by default with #log method" do
+describe 'Kernel#log' do
+	it "should by default log to STDERR at INFO level" do
 		out = stderr_read do
 			log.debug "this is a debug"
 			log.info "this is a info"
@@ -9,10 +9,32 @@ describe "logging" do
 			log.error "this is a error"
 		end
 
-		out.should include("this is a debug")
+		out.should_not include("this is a debug")
 		out.should include("this is a info")
 		out.should include("this is a warn")
 		out.should include("this is a error")
+	end
+
+	it "should log class names" do
+		class TestA
+			def initialize
+				log.info "this is a test A"
+			end
+		end
+
+		class TestB
+			def initialize
+				log.info "this is a test B"
+			end
+		end
+
+		out = stderr_read do
+			TestA.new
+			TestB.new
+		end
+
+		out.should include("TestA")
+		out.should include("TestB")
 	end
 end
 

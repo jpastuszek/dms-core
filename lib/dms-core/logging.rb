@@ -1,8 +1,11 @@
-require 'logger'
+require 'logging'
+
+Logging.logger.root.appenders = Logging.appenders.stderr
+Logging.logger.root.level = :info
 
 module Kernel
 	def log
-		@logger ||= Logger.new(STDERR)
+		Logging.logger[self]
 	end
 end
 
