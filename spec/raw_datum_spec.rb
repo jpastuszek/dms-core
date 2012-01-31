@@ -43,5 +43,16 @@ describe RawDatum do
 		dt.component.should == 'cache'
 		dt.value.should == 123
 	end
+
+	it "can be converted to RawDataPoint" do
+		rdp = subject.to_raw_data_point('magi', Time.at(2))
+
+		rdp.location.should == 'magi'
+		rdp.type.should == 'Memory usage'
+		rdp.group.should == 'RAM'
+		rdp.component.should == 'cache'
+		rdp.time_stamp.should == 2
+		rdp.value.should == 123
+	end
 end
 

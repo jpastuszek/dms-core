@@ -31,6 +31,10 @@ class RawDatum < DataType
 		end
 	end
 
+	def to_raw_data_point(location, time_stamp)
+		RawDataPoint.new(location, type, group, component, time_stamp, value)
+	end
+
 	register(self)
 end
 
