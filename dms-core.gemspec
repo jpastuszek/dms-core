@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jakub Pastuszek"]
   s.date = %q{2012-02-01}
-  s.description = %q{TODO: longer description of your gem}
+  s.description = %q{Provides base classes and runtime environment for DMS components}
   s.email = %q{jpastuszek@gmail.com}
   s.extra_rdoc_files = [
     "LICENSE.txt",
@@ -24,6 +24,7 @@ Gem::Specification.new do |s|
     "LICENSE.txt",
     "README.rdoc",
     "Rakefile",
+    "dms-core.gemspec",
     "features/dms-core.feature",
     "features/step_definitions/dms-core_steps.rb",
     "features/support/env.rb",
@@ -46,7 +47,7 @@ Gem::Specification.new do |s|
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.7}
-  s.summary = %q{TODO: one-line summary of your gem}
+  s.summary = %q{DMS core classes}
 
   if s.respond_to? :specification_version then
     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
