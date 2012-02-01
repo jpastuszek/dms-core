@@ -17,8 +17,8 @@ Jeweler::Tasks.new do |gem|
   gem.name = "dms-core"
   gem.homepage = "http://github.com/jpastuszek/dms-core"
   gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
+  gem.summary = %Q{DMS core classes}
+  gem.description = %Q{Provides base classes and runtime environment for DMS components}
   gem.email = "jpastuszek@gmail.com"
   gem.authors = ["Jakub Pastuszek"]
   # dependencies defined in Gemfile
