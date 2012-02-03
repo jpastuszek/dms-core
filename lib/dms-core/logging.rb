@@ -1,6 +1,6 @@
 require 'logging'
 
-Logging.logger.root.appenders = Logging.appenders.stderr
+Logging.logger.root.appenders = Logging.appenders.stderr(:layout => Logging::Layouts::Pattern.new)
 Logging.logger.root.level = :info
 
 module Kernel
