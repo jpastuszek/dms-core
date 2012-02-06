@@ -27,12 +27,12 @@ describe ZeroMQ do
 					expect {
 						zmq.pull_bind('tcpX://127.0.0.1:2200') do |pull|
 						end
-					}.to raise_error ZeroMQError::OperationFailedError, "Unknown ZeroMQ error (errno 0)" # FIXME
+					}.to raise_error ZeroMQError::OperationFailedError, "Errno 93: Protocol not supported"
 
 					expect {
 						zmq.push_connect('tcpX://127.0.0.1:2200') do |pull|
 						end
-					}.to raise_error ZeroMQError::OperationFailedError, "Unknown ZeroMQ error (errno 0)" # FIXME
+					}.to raise_error ZeroMQError::OperationFailedError, "Errno 93: Protocol not supported"
 				end
 		end
 	end
