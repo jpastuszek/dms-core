@@ -36,5 +36,35 @@ describe 'Kernel#log' do
 		out.should include("TestA")
 		out.should include("TestB")
 	end
+
+	it "should allow specifing custom class name" do
+		class TestA
+			def initialize
+				logging_class_name 'HelloWorld'
+				log.info "this is a test A"
+			end
+		end
+
+		out = stderr_read do
+			TestA.new
+		end
+
+		out.should include("HelloWorld")
+	end
+
+	it "should allow specifing custom logging context" do
+		class TestA
+			def initialize
+				logging_context 'hello world'
+				log.info "this is a test A"
+			end
+		end
+
+		out = stderr_read do
+			TestA.new
+		end
+
+		out.should include("TestA[hello world]")
+	end
 end
 
