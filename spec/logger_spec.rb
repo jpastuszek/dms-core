@@ -2,7 +2,7 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe 'Kernel#log' do
 	it "should by default log to STDERR at INFO level" do
-		out = stderr_read do
+		out = Capture.stderr do
 			log.debug "this is a debug"
 			log.info "this is a info"
 			log.warn "this is a warn"
@@ -28,7 +28,7 @@ describe 'Kernel#log' do
 			end
 		end
 
-		out = stderr_read do
+		out = Capture.stderr do
 			TestA.new
 			TestB.new
 		end
@@ -45,7 +45,7 @@ describe 'Kernel#log' do
 			end
 		end
 
-		out = stderr_read do
+		out = Capture.stderr do
 			TestA.new
 		end
 
@@ -60,7 +60,7 @@ describe 'Kernel#log' do
 			end
 		end
 
-		out = stderr_read do
+		out = Capture.stderr do
 			TestA.new
 		end
 
