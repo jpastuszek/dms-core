@@ -35,6 +35,10 @@ class RawDatum < DataType
 		RawDataPoint.new(location, type, group, component, time_stamp, value)
 	end
 
+	def to_s
+		"RawDatum[#{type}/#{group}/#{component}]: #{value}"
+	end
+
 	register(self)
 end
 
