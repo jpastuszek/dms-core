@@ -5,7 +5,7 @@ Logging.logger.root.level = :info
 
 module Kernel
 	def log
-		class_name = @logging_class_name ? @logging_class_name : self.class.name
+		class_name = @logging_class_name ? @logging_class_name : self.class.name.split("::").last
 
 		if @logging_context
 			class_name += '[' + @logging_context.to_s + ']'
