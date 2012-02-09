@@ -39,6 +39,10 @@ class RawDataPoint < DataType
 		end
 	end
 
+	def to_s
+		"RawDataPoint[#{location} #{Time.at(time_stamp).utc}][#{type}/#{group}/#{component}]: #{value}"
+	end
+
 	register(self)
 end
 
