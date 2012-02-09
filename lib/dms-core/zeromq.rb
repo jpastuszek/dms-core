@@ -71,8 +71,10 @@ class ZeroMQ
 		end
 	end
 
-	def push_connect(address)
+	def push_connect(address, hwm = 1, linger = 0)
 		have? socket = @context.socket(ZMQ::PUSH)
+		socket.setsockopt(ZMQ::LINGER, linger)
+		socket.setsockopt(ZMQ::HWM, hwm)
 		begin
 			ok? socket.connect(address)
 			yield Sender.new(socket)
