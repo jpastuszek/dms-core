@@ -8,13 +8,13 @@ class RawDataPoint < DataType
 	attr_reader :time_stamp
 	attr_reader :value
 
-	def initialize(location, type, group, component, time_stamp, value)
+	def initialize(location, type, group, component, value, time_stamp)
 		@location = location
 		@type = type
 		@group = group
 		@component = component
-		@time_stamp = time_stamp.to_i
 		@value = value
+		@time_stamp = time_stamp.to_f
 	end
 
 	def self.from_message(message)
@@ -23,8 +23,8 @@ class RawDataPoint < DataType
 			message[:type], 
 			message[:group], 
 			message[:component], 
-			message[:time_stamp], 
-			message[:value]
+			message[:value],
+			message[:time_stamp]
 		)
 	end
 
@@ -34,13 +34,13 @@ class RawDataPoint < DataType
 			body[:type] = @type
 			body[:group] = @group
 			body[:component] = @component
-			body[:time_stamp] = @time_stamp
 			body[:value] = @value
+			body[:time_stamp] = @time_stamp
 		end
 	end
 
 	def to_s
-		"RawDataPoint[#{location} #{Time.at(time_stamp).utc}][#{type}/#{group}/#{component}]: #{value}"
+		"RawDataPoint[#{location}][#{Time.at(time_stamp).utc.strftime('%Y-%m-%d %H:%M:%S.%L')}][#{type}/#{group}/#{component}]: #{value}"
 	end
 
 	register(self)

@@ -6,9 +6,9 @@ describe ZeroMQ do
 			message = nil
 
 			ZeroMQ.new do |zmq|
-				zmq.pull_bind('tcp://127.0.0.1:2200') do |pull|
-					zmq.push_connect('tcp://127.0.0.1:2200') do |push|
-						push.send RawDatum.new('Memory usage', 'RAM', 'cache', 123)
+				zmq.pull_bind('ipc:///tmp/dms-core-test') do |pull|
+					zmq.push_connect('ipc:///tmp/dms-core-test') do |push|
+						push.send RawDatum.new('Memory usage', 'RAM', 'cache', 123, Time.at(2.5))
 					end
 
 					message = pull.recv
@@ -19,6 +19,7 @@ describe ZeroMQ do
 			message.type.should == 'Memory usage'
 			message.group.should == 'RAM'
 			message.component.should == 'cache'
+			message.time_stamp.should == 2.5
 			message.value.should == 123
 		end
 

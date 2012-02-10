@@ -2,7 +2,7 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe RawDataPoint do
 	subject do
-		RawDataPoint.new('magi', 'Memory usage', 'RAM', 'cache', Time.at(1), 123)
+		RawDataPoint.new('magi', 'Memory usage', 'RAM', 'cache', 123, Time.at(2.35))
 	end
 
 	it "takes type, group, component and value" do
@@ -10,8 +10,8 @@ describe RawDataPoint do
 		subject.type.should == 'Memory usage'
 		subject.group.should == 'RAM'
 		subject.component.should == 'cache'
-		subject.time_stamp.should == 1
 		subject.value.should == 123
+		subject.time_stamp.should == 2.35
 	end
 
 	it "can be converted to Message" do
@@ -23,8 +23,8 @@ describe RawDataPoint do
 		m[:type].should == 'Memory usage'
 		m[:group].should == 'RAM'
 		m[:component].should == 'cache'
-		m[:time_stamp].should == 1
 		m[:value].should == 123
+		m[:time_stamp].should == 2.35
 	end
 
 	it "can be converted to Message - with topic" do
@@ -36,8 +36,8 @@ describe RawDataPoint do
 		m[:type].should == 'Memory usage'
 		m[:group].should == 'RAM'
 		m[:component].should == 'cache'
-		m[:time_stamp].should == 1
 		m[:value].should == 123
+		m[:time_stamp].should == 2.35
 	end
 
 	it "can be created from Message" do
@@ -48,8 +48,8 @@ describe RawDataPoint do
 		dt.type.should == 'Memory usage'
 		dt.group.should == 'RAM'
 		dt.component.should == 'cache'
-		dt.time_stamp.should == 1
 		dt.value.should == 123
+		dt.time_stamp.should == 2.35
 	end
 end
 

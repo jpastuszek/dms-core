@@ -2,7 +2,7 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe RawDatum do
 	subject do
-		RawDatum.new('Memory usage', 'RAM', 'cache', 123)
+		RawDatum.new('Memory usage', 'RAM', 'cache', 123, Time.at(2.25))
 	end
 
 	it "takes type, group, component and value" do
@@ -10,6 +10,7 @@ describe RawDatum do
 		subject.group.should == 'RAM'
 		subject.component.should == 'cache'
 		subject.value.should == 123
+		subject.time_stamp.should == 2.25
 	end
 
 	it "can be converted to Message" do
@@ -21,6 +22,7 @@ describe RawDatum do
 		m[:group].should == 'RAM'
 		m[:component].should == 'cache'
 		m[:value].should == 123
+		m[:time_stamp].should == 2.25
 	end
 
 	it "can be converted to Message - with topic" do
@@ -32,6 +34,7 @@ describe RawDatum do
 		m[:group].should == 'RAM'
 		m[:component].should == 'cache'
 		m[:value].should == 123
+		m[:time_stamp].should == 2.25
 	end
 
 	it "can be created from Message" do
@@ -42,17 +45,18 @@ describe RawDatum do
 		dt.group.should == 'RAM'
 		dt.component.should == 'cache'
 		dt.value.should == 123
+		dt.time_stamp.should == 2.25
 	end
 
 	it "can be converted to RawDataPoint" do
-		rdp = subject.to_raw_data_point('magi', Time.at(2))
+		rdp = subject.to_raw_data_point('magi')
 
 		rdp.location.should == 'magi'
 		rdp.type.should == 'Memory usage'
 		rdp.group.should == 'RAM'
 		rdp.component.should == 'cache'
-		rdp.time_stamp.should == 2
 		rdp.value.should == 123
+		rdp.time_stamp.should == 2.25
 	end
 end
 
