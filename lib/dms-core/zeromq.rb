@@ -61,8 +61,11 @@ class ZeroMQ
 		end
 	end
 
-	def pull_bind(address)
+	def pull_bind(address, hwm = 1000, swap = 0, buffer = 0)
 		have? socket = @context.socket(ZMQ::PULL)
+		ok? socket.setsockopt(ZMQ::HWM, hwm)
+		ok? socket.setsockopt(ZMQ::SWAP, swap)
+		ok? socket.setsockopt(ZMQ::SNDBUF, buffer)
 		begin
 			ok? socket.bind(address)
 			yield Receiver.new(socket)
@@ -71,10 +74,12 @@ class ZeroMQ
 		end
 	end
 
-	def push_connect(address, hwm = 1, linger = -1)
+	def push_connect(address, hwm = 1000, swap = 0, buffer = 0, linger = 10)
 		have? socket = @context.socket(ZMQ::PUSH)
-		socket.setsockopt(ZMQ::LINGER, (linger * 1000).to_i)
-		#socket.setsockopt(ZMQ::HWM, hwm)
+		ok? socket.setsockopt(ZMQ::HWM, hwm)
+		ok? socket.setsockopt(ZMQ::SWAP, swap)
+		ok? socket.setsockopt(ZMQ::SNDBUF, buffer)
+		ok? socket.setsockopt(ZMQ::LINGER, (linger * 1000).to_i)
 		begin
 			ok? socket.connect(address)
 			yield Sender.new(socket)
