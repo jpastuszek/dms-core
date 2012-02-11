@@ -1,6 +1,14 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe ZeroMQ do
+	it "should provide libzmq version" do
+		ZeroMQ.lib_version.should match(/\d+\.\d+\.\d+/)
+	end
+
+	it "should provide ruby binding version version" do
+		ZeroMQ.binding_version.should match(/\d+\.\d+\.\d+/)
+	end
+
 	describe "push and pull" do
 		it "should allow sending and receiving RawDatum object" do
 			message = nil

@@ -1,4 +1,5 @@
 require 'ffi-rzmq'
+require 'ffi-rzmq/version'
 
 module ZeroMQError
 	class OperationFailedError < IOError
@@ -25,6 +26,15 @@ end
 
 class ZeroMQ
 	include ZeroMQError
+
+	def self.lib_version
+		lib = ZMQ::LibZMQ::version
+		"#{lib[:major]}.#{lib[:minor]}.#{lib[:patch]}"
+	end
+
+	def self.binding_version
+		ZMQ::VERSION
+	end
 
 	class Sender
 		include ZeroMQError
