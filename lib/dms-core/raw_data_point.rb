@@ -8,7 +8,7 @@ class RawDataPoint < DataType
 	attr_reader :time_stamp
 	attr_reader :value
 
-	def initialize(location, type, group, component, value, time_stamp)
+	def initialize(location, type, group, component, value, time_stamp = Time.now.utc)
 		@location = location
 		@type = type
 		@group = group

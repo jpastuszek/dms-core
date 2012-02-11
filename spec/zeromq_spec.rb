@@ -10,20 +10,20 @@ describe ZeroMQ do
 	end
 
 	describe "push and pull" do
-		it "should allow sending and receiving RawDatum object" do
+		it "should allow sending and receiving RawDataPoint object" do
 			message = nil
 
 			ZeroMQ.new do |zmq|
 				zmq.pull_bind('ipc:///tmp/dms-core-test') do |pull|
 					zmq.push_connect('ipc:///tmp/dms-core-test') do |push|
-						push.send RawDatum.new('Memory usage', 'RAM', 'cache', 123, Time.at(2.5))
+						push.send RawDataPoint.new('magi', 'Memory usage', 'RAM', 'cache', 123, Time.at(2.5))
 					end
 
 					message = pull.recv
 				end
 			end
 
-			message.should be_a RawDatum
+			message.should be_a RawDataPoint
 			message.type.should == 'Memory usage'
 			message.group.should == 'RAM'
 			message.component.should == 'cache'

@@ -4,14 +4,14 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{dms-core}
+  s.name = "dms-core"
   s.version = "0.0.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jakub Pastuszek"]
-  s.date = %q{2012-02-01}
-  s.description = %q{Provides base classes and runtime environment for DMS components}
-  s.email = %q{jpastuszek@gmail.com}
+  s.date = "2012-02-11"
+  s.description = "Provides base classes and runtime environment for DMS components"
+  s.email = "jpastuszek@gmail.com"
   s.extra_rdoc_files = [
     "LICENSE.txt",
     "README.rdoc"
@@ -35,23 +35,20 @@ Gem::Specification.new do |s|
     "lib/dms-core/logging.rb",
     "lib/dms-core/message.rb",
     "lib/dms-core/raw_data_point.rb",
-    "lib/dms-core/raw_datum.rb",
     "lib/dms-core/zeromq.rb",
     "spec/logger_spec.rb",
     "spec/message_spec.rb",
     "spec/raw_data_point_spec.rb",
-    "spec/raw_datum_spec.rb",
     "spec/spec_helper.rb",
     "spec/zeromq_spec.rb"
   ]
-  s.homepage = %q{http://github.com/jpastuszek/dms-core}
+  s.homepage = "http://github.com/jpastuszek/dms-core"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.3.7}
-  s.summary = %q{DMS core classes}
+  s.rubygems_version = "1.8.15"
+  s.summary = "DMS core classes"
 
   if s.respond_to? :specification_version then
-    current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
@@ -63,7 +60,8 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<cucumber>, [">= 0"])
       s.add_development_dependency(%q<bundler>, ["~> 1.0.0"])
       s.add_development_dependency(%q<jeweler>, ["~> 1.8.3"])
-      s.add_development_dependency(%q<rcov>, [">= 0"])
+      s.add_development_dependency(%q<simplecov>, [">= 0"])
+      s.add_development_dependency(%q<capture-output>, ["~> 1.0.0"])
     else
       s.add_dependency(%q<msgpack>, ["~> 0.4.6"])
       s.add_dependency(%q<ffi-rzmq>, ["~> 0.9.3"])
@@ -73,7 +71,8 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<cucumber>, [">= 0"])
       s.add_dependency(%q<bundler>, ["~> 1.0.0"])
       s.add_dependency(%q<jeweler>, ["~> 1.8.3"])
-      s.add_dependency(%q<rcov>, [">= 0"])
+      s.add_dependency(%q<simplecov>, [">= 0"])
+      s.add_dependency(%q<capture-output>, ["~> 1.0.0"])
     end
   else
     s.add_dependency(%q<msgpack>, ["~> 0.4.6"])
@@ -84,7 +83,8 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<cucumber>, [">= 0"])
     s.add_dependency(%q<bundler>, ["~> 1.0.0"])
     s.add_dependency(%q<jeweler>, ["~> 1.8.3"])
-    s.add_dependency(%q<rcov>, [">= 0"])
+    s.add_dependency(%q<simplecov>, [">= 0"])
+    s.add_dependency(%q<capture-output>, ["~> 1.0.0"])
   end
 end
 
