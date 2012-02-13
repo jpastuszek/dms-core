@@ -7,7 +7,7 @@ module ZeroMQError
 			if ZMQ::Util.errno == 0
 				super "Unknown ZeroMQ error (errno 0)"
 			else
-				super "Errno #{ZMQ::Util.errno}: #{ZMQ::Util.error_string}"
+				super "#{ZMQ::Util.error_string}"
 			end
 		end
 	end
