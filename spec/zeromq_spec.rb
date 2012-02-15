@@ -16,7 +16,7 @@ describe ZeroMQ do
 			ZeroMQ.new do |zmq|
 				zmq.pull_bind('ipc:///tmp/dms-core-test') do |pull|
 					zmq.push_connect('ipc:///tmp/dms-core-test') do |push|
-						push.send RawDataPoint.new('magi', 'Memory usage', 'RAM', 'cache', 123, Time.at(2.5))
+						push.send RawDataPoint.new('magi', 'system/memory', 'cache', 123, Time.at(2.5))
 					end
 
 					message = pull.recv
@@ -24,8 +24,7 @@ describe ZeroMQ do
 			end
 
 			message.should be_a RawDataPoint
-			message.type.should == 'Memory usage'
-			message.group.should == 'RAM'
+			message.path.should == 'system/memory'
 			message.component.should == 'cache'
 			message.time_stamp.should == 2.5
 			message.value.should == 123
