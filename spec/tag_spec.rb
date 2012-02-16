@@ -1,3 +1,26 @@
+shared_examples_for 'TagPattern machable' do
+	it 'should match sub components with order' do
+		TagPattern.new('java').should be_match(subject)
+		TagPattern.new('memory').should be_match(subject)
+		TagPattern.new('memory:HeapSpace').should be_match(subject)
+		TagPattern.new('java:memory').should be_match(subject)
+		TagPattern.new('memory:java').should_not be_match(subject)
+	end
+
+	it 'should support regexp component matching' do
+		TagPattern.new('/ja/').should be_match(subject)
+		TagPattern.new('/me.*ory/').should be_match(subject)
+		TagPattern.new('memory:/pace/').should be_match(subject)
+		TagPattern.new('java://:HeapSpace').should be_match(subject)
+		TagPattern.new('memory:/j/').should_not be_match(subject)
+	end
+
+	it 'matching should be case insensitive' do
+		TagPattern.new('MEMORY:heapspace').should be_match(subject)
+		TagPattern.new('memory:/SPA/').should be_match(subject)
+	end
+end
+
 describe Tag do
 	subject do
 		Tag.new('java:memory:HeapSpace:PermGem')
@@ -21,6 +44,8 @@ describe Tag do
 	it 'constructor argument is casted to string' do
 		Tag.new(:test)[0].should == 'test'
 	end
+
+	it_behaves_like 'TagPattern machable'
 end
 
 describe TagSet do
@@ -61,30 +86,10 @@ describe TagSet do
 		ts.should include(Tag.new('abc'))
 		ts.should include(Tag.new('xyz'))
 	end
-end
 
-describe TagPattern do
-	describe 'matching tags' do
-		subject do
-			Tag.new('java:memory:HeapSpace:PermGem')
-		end
-
-		it 'should match sub components with order' do
-			tp = TagPattern.new('java')
-			tp.match?(subject).should be_true
-
-			tp = TagPattern.new('memory')
-			tp.match?(subject).should be_true
-
-			tp = TagPattern.new('memory:HeapSpace')
-			tp.match?(subject).should be_true
-
-			tp = TagPattern.new('java:memory')
-			tp.match?(subject).should be_true
-
-			tp = TagPattern.new('memory:java')
-			tp.match?(subject).should be_false
-		end
+	it_behaves_like 'TagPattern machable'
+	it 'should match abc tag' do
+		TagPattern.new('abc').should be_match(subject)
 	end
 end
 

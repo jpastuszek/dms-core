@@ -1,8 +1,8 @@
 require 'set'
 
 class Tag < Array
-	def initialize(string)
-		super string.to_s.strip.split(':')
+	def initialize(value)
+		super value.to_s.strip.split(':')
 	end
 
 	def to_s
@@ -25,13 +25,33 @@ class TagSet < Set
 end
 
 class TagPattern < Tag
-	def match?(tag)
-		tag = tag.is_a?(Tag) ? tag.dup : Tag.new(tag)
+	def initialize(value)
+		super
+		map! do |component| 
+			if component[0] == '/' and component[-1] == '/'
+				Regexp.new(component.slice(1...-1), Regexp::EXTENDED | Regexp::IGNORECASE)
+			else
+				component
+			end
+		end
+	end
 
-		# stupid and slow but works
-		while tag.length >= length
-			return true if tag.take(length) == self
-			tag.shift
+	def match?(value)
+		tags = value.is_a?(TagSet) ? value : [value]
+		tags.each do |tag|
+			tag = tag.is_a?(Tag) ? tag.dup : Tag.new(tag)
+
+			# stupid and slow but works
+			while tag.length >= length
+				return true if tag.take(length).zip(self).all? do |tag_component, pattern_component|
+					if pattern_component.is_a? Regexp
+						tag_component =~ pattern_component
+					else
+						tag_component.downcase == pattern_component.downcase
+					end
+				end
+				tag.shift
+			end
 		end
 
 		return false
