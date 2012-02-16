@@ -11,6 +11,14 @@ class Tag < Array
 end
 
 class TagSet < Set
+	def initialize(value)
+		if value.is_a? String
+			super value.split(',').map{|tag| Tag.new(tag)}
+		else
+			super
+		end
+	end
+
 	def to_s
 		to_a.sort.map{|tag| tag.to_s}.join(', ')
 	end

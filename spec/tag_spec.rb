@@ -40,5 +40,14 @@ describe TagSet do
 		subject.add(Tag.new('gear'))
 		subject.to_s.should == 'abc, gear, java:memory:HeapSpace:PermGem'
 	end
+
+	it 'should construct from lazy formatted string' do
+		ts = TagSet.new('   xyz,memory, java:memory:HeapSpace:PermGem,   location:magi ')
+		ts.to_s.should == 'java:memory:HeapSpace:PermGem, location:magi, memory, xyz'
+		ts.should include(Tag.new('location:magi'))
+		ts.should include(Tag.new('memory'))
+		ts.should include(Tag.new('xyz'))
+		ts.should include(Tag.new('java:memory:HeapSpace:PermGem'))
+	end
 end
 
