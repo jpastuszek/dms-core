@@ -2,7 +2,7 @@ require 'set'
 
 class Tag < Array
 	def initialize(string)
-		super string.strip.split(':')
+		super string.to_s.strip.split(':')
 	end
 
 	def to_s
@@ -15,7 +15,7 @@ class TagSet < Set
 		if value.is_a? String
 			super value.split(',').map{|tag| Tag.new(tag)}
 		else
-			super
+			super value.to_a.map{|it| it.is_a?(Tag) ? it : Tag.new(it)}
 		end
 	end
 

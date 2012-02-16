@@ -17,6 +17,10 @@ describe Tag do
 	it "should strip white space around it" do
 		Tag.new(' test   ').to_s.should == 'test'
 	end
+
+	it 'constructor argument is casted to string' do
+		Tag.new(:test)[0].should == 'test'
+	end
 end
 
 describe TagSet do
@@ -48,6 +52,14 @@ describe TagSet do
 		ts.should include(Tag.new('memory'))
 		ts.should include(Tag.new('xyz'))
 		ts.should include(Tag.new('java:memory:HeapSpace:PermGem'))
+	end
+
+	it 'should construct from anything converable to array of strings' do
+		ts = TagSet.new(Set['xyz', :abc, 1])
+		ts.to_s.should == '1, abc, xyz'
+		ts.should include(Tag.new('1'))
+		ts.should include(Tag.new('abc'))
+		ts.should include(Tag.new('xyz'))
 	end
 end
 
