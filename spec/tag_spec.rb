@@ -63,3 +63,28 @@ describe TagSet do
 	end
 end
 
+describe TagPattern do
+	describe 'matching tags' do
+		subject do
+			Tag.new('java:memory:HeapSpace:PermGem')
+		end
+
+		it 'should match sub components with order' do
+			tp = TagPattern.new('java')
+			tp.match?(subject).should be_true
+
+			tp = TagPattern.new('memory')
+			tp.match?(subject).should be_true
+
+			tp = TagPattern.new('memory:HeapSpace')
+			tp.match?(subject).should be_true
+
+			tp = TagPattern.new('java:memory')
+			tp.match?(subject).should be_true
+
+			tp = TagPattern.new('memory:java')
+			tp.match?(subject).should be_false
+		end
+	end
+end
+

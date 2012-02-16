@@ -24,3 +24,17 @@ class TagSet < Set
 	end
 end
 
+class TagPattern < Tag
+	def match?(tag)
+		tag = tag.is_a?(Tag) ? tag.dup : Tag.new(tag)
+
+		# stupid and slow but works
+		while tag.length >= length
+			return true if tag.take(length) == self
+			tag.shift
+		end
+
+		return false
+	end
+end
+
