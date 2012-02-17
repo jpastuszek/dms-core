@@ -2,7 +2,7 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe DataSet do
 	subject do
-		DataSet.new('memory', 'location:magi, system:memory', 'B', Time.at(100), Time.at(0), 1) do
+		DataSet.new('memory', 'location:magi, system:memory', 'B', Time.at(100), Time.at(0)) do
 			component_data 'free', 1, 1234
 			component_data 'free', 2, 1235
 			component_data 'used', 1, 3452
@@ -21,13 +21,11 @@ describe DataSet do
 		subject.unit.should == 'B'
 	end
 
-	it 'takes time_from, time_to in UTC and granularity' do
+	it 'takes time_from, time_to in UTC' do
 		subject.time_from.should be_a(Time)
 		subject.time_from.should be_utc
 		subject.time_to.should be_a(Time)
 		subject.time_to.should be_utc
-
-		subject.granularity.should == 1.0
 	end
 
 	it 'takes component data as a hash' do
@@ -50,7 +48,6 @@ describe DataSet do
 		m[:unit].should == 'B'
 		m[:time_from].should == 100
 		m[:time_to].should == 0
-		m[:granularity].should == 1.0
 		m[:component_data].should include('free')
 		m[:component_data]['free'].should == [1.0, 1234, 2.0, 1235]
 		m[:component_data].should include('used')
@@ -72,7 +69,6 @@ describe DataSet do
 		dt.time_from.should be_utc
 		dt.time_to.should be_a(Time)
 		dt.time_to.should be_utc
-		dt.granularity.should == 1.0
 		dt.component_data.should be_a(Hash)
 		dt.component_data.should have_key('used')
 		dt.component_data['used'][0][0].should be_a Time

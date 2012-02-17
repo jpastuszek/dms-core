@@ -32,16 +32,14 @@ class DataSet < DataType
 	attr_reader :unit
 	attr_reader :time_from
 	attr_reader :time_to
-	attr_reader :granularity
 	attr_reader :component_data
 
-	def initialize(type_name, tag_set, unit, time_from, time_to, granularity, &block)
+	def initialize(type_name, tag_set, unit, time_from, time_to, &block)
 		@type_name = type_name.to_s
 		@tag_set = tag_set.is_a?(TagSet) ? tag_set : TagSet.new(tag_set)
 		@unit = unit.to_s
 		@time_from = DataType.to_time(time_from)
 		@time_to = DataType.to_time(time_to)
-		@granularity = granularity.to_f
 		@component_data = ComponentData.new(&block)
 	end
 
@@ -52,7 +50,6 @@ class DataSet < DataType
 			message[:unit], 
 			Time.at(message[:time_from]).utc,
 			Time.at(message[:time_to]).utc,
-			message[:granularity],
 		) do
 			message[:component_data].each_pair do |component, data|
 				data.each_slice(2) do |time, value|
@@ -69,7 +66,6 @@ class DataSet < DataType
 			body[:unit] = @unit
 			body[:time_from] = @time_from.to_f
 			body[:time_to] = @time_to.to_f
-			body[:granularity] = @granularity
 			body[:component_data] = @component_data.to_transport
 		end
 	end
