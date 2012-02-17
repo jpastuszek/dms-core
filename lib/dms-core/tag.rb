@@ -8,6 +8,25 @@ class Tag < Array
 	def to_s
 		join(':')
 	end
+
+	def match?(pattern)
+		pattern = pattern.is_a?(TagPattern) ? pattern : TagPattern.new(pattern)
+		tag = self.dup
+	
+		# stupid and slow but works
+		while tag.length >= pattern.length
+			return true if tag.take(pattern.length).zip(pattern).all? do |tag_component, pattern_component|
+				if pattern_component.is_a? Regexp
+					tag_component =~ pattern_component
+				else
+					tag_component.downcase == pattern_component.downcase
+				end
+			end
+			tag.shift
+		end
+
+		return false
+	end
 end
 
 class TagSet < Set
@@ -22,6 +41,12 @@ class TagSet < Set
 	def to_s
 		to_a.sort.map{|tag| tag.to_s}.join(', ')
 	end
+
+	def match?(pattern)
+		one? do |tag|
+			tag.match?(pattern)
+		end
+	end
 end
 
 class TagPattern < Tag
@@ -34,27 +59,6 @@ class TagPattern < Tag
 				component
 			end
 		end
-	end
-
-	def match?(value)
-		tags = value.is_a?(TagSet) ? value : [value]
-		tags.each do |tag|
-			tag = tag.is_a?(Tag) ? tag.dup : Tag.new(tag)
-
-			# stupid and slow but works
-			while tag.length >= length
-				return true if tag.take(length).zip(self).all? do |tag_component, pattern_component|
-					if pattern_component.is_a? Regexp
-						tag_component =~ pattern_component
-					else
-						tag_component.downcase == pattern_component.downcase
-					end
-				end
-				tag.shift
-			end
-		end
-
-		return false
 	end
 end
 

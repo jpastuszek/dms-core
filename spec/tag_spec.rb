@@ -1,23 +1,28 @@
 shared_examples_for 'TagPattern machable' do
 	it 'should match sub components with order' do
-		TagPattern.new('java').should be_match(subject)
-		TagPattern.new('memory').should be_match(subject)
-		TagPattern.new('memory:HeapSpace').should be_match(subject)
-		TagPattern.new('java:memory').should be_match(subject)
-		TagPattern.new('memory:java').should_not be_match(subject)
+		subject.should be_match(TagPattern.new('java'))
+		subject.should be_match(TagPattern.new('memory'))
+		subject.should be_match(TagPattern.new('memory:HeapSpace'))
+		subject.should be_match(TagPattern.new('java:memory'))
+		subject.should_not be_match(TagPattern.new('memory:java'))
 	end
 
 	it 'should support regexp component matching' do
-		TagPattern.new('/ja/').should be_match(subject)
-		TagPattern.new('/me.*ory/').should be_match(subject)
-		TagPattern.new('memory:/pace/').should be_match(subject)
-		TagPattern.new('java://:HeapSpace').should be_match(subject)
-		TagPattern.new('memory:/j/').should_not be_match(subject)
+		subject.should be_match(TagPattern.new('/ja/'))
+		subject.should be_match(TagPattern.new('/me.*ory/'))
+		subject.should be_match(TagPattern.new('memory:/pace/'))
+		subject.should be_match(TagPattern.new('java://:HeapSpace'))
+		subject.should_not be_match(TagPattern.new('memory:/j/'))
 	end
 
 	it 'matching should be case insensitive' do
-		TagPattern.new('MEMORY:heapspace').should be_match(subject)
-		TagPattern.new('memory:/SPA/').should be_match(subject)
+		subject.should be_match(TagPattern.new('MEMORY:heapspace'))
+		subject.should be_match(TagPattern.new('memory:/SPA/'))
+	end
+
+	it 'matching should work with string' do
+		subject.should be_match('MEMORY:heapspace')
+		subject.should be_match('memory:/SPA/')
 	end
 end
 
@@ -89,7 +94,7 @@ describe TagSet do
 
 	it_behaves_like 'TagPattern machable'
 	it 'should match abc tag' do
-		TagPattern.new('abc').should be_match(subject)
+		subject.should be_match(TagPattern.new('abc'))
 	end
 end
 
