@@ -25,6 +25,21 @@ shared_examples_for 'TagPattern machable' do
 	it 'matching should work with string' do
 		subject.should be_match('MEMORY:heapspace')
 		subject.should be_match('memory:/SPA/')
+
+		subject.should be_match('dafssdf, memory:/SPA/, dafds')
+		subject.should be_match('MEMORY:heapspace, dafssdf, memory:/SPA/, dafds')
+
+		subject.should_not be_match('fads, dafssdf, fdas, dafds')
+	end
+
+	it 'should match against TagPatternSet' do
+		subject.should be_match(TagPatternSet.new('java://:HeapSpace, asfdasd, afsderw'))
+		subject.should be_match(TagPatternSet.new('dfassde, MEMORY:heapspace, /me.*ory/'))
+		subject.should_not be_match(TagPatternSet.new('ewrad, ewrad, fda'))
+	end
+
+	it 'should match against empty regexp pattern' do
+		subject.should be_match(TagPattern.new('//'))
 	end
 end
 
@@ -97,6 +112,65 @@ describe TagSet do
 	it_behaves_like 'TagPattern machable'
 	it 'should match abc tag' do
 		subject.should be_match(TagPattern.new('abc'))
+	end
+end
+
+describe TagPattern do
+	subject do
+		TagPattern.new('java:/.*ry/:heap:/space/')
+	end
+	
+	it 'should include Regexp components that are sourounded by //' do
+		subject[0].should be_a(String)
+		subject[1].should be_a(Regexp)
+		subject[2].should be_a(String)
+		subject[3].should be_a(Regexp)
+	end
+
+	it 'should convert to string' do
+		subject.to_s.should == 'java:/.*ry/:heap:/space/'
+	end
+end
+
+describe TagPatternSet do
+	subject do
+		TagPatternSet[TagPattern.new('java:memory://:/space/'), TagPattern.new('//')]
+	end
+
+	it 'should convert to string in alphabetical order' do
+		subject.to_s.should == '//, java:memory://:/space/'
+	end
+
+	it 'should allow checkting if tag is there' do
+		subject.member?(TagPattern.new('//')).should be_true
+		subject.member?(TagPattern.new('/xyz/')).should be_false
+	end
+
+	it 'should convert to array' do
+		subject.to_a.should include(TagPattern.new('//'))
+		subject.to_a.should include(TagPattern.new('java:memory://:/space/'))
+	end
+
+	it 'should store new tags' do
+		subject.add(Tag.new('gear'))
+		subject.to_s.should == '//, gear, java:memory://:/space/'
+	end
+
+	it 'should construct from lazy formatted string' do
+		ts = TagPatternSet.new('   xyz,memory, java:memory://:PermGem,   /loc/:magi ')
+		ts.to_s.should == '/loc/:magi, java:memory://:PermGem, memory, xyz'
+		ts.should include(TagPattern.new('/loc/:magi'))
+		ts.should include(TagPattern.new('memory'))
+		ts.should include(TagPattern.new('xyz'))
+		ts.should include(TagPattern.new('java:memory://:PermGem'))
+	end
+
+	it 'should construct from anything converable to array of strings' do
+		ts = TagPatternSet.new(Set['/xyz/', :abc, 1])
+		ts.to_s.should == '/xyz/, 1, abc'
+		ts.should include(TagPattern.new('1'))
+		ts.should include(TagPattern.new('abc'))
+		ts.should include(TagPattern.new('/xyz/'))
 	end
 end
 
