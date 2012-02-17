@@ -12,7 +12,7 @@ class RawDataPoint < DataType
 		@path = path
 		@component = component
 		@value = value
-		@time_stamp = time_stamp.to_f
+		@time_stamp = DataType.to_time(time_stamp)
 	end
 
 	def self.from_message(message)
@@ -31,7 +31,7 @@ class RawDataPoint < DataType
 			body[:path] = @path
 			body[:component] = @component
 			body[:value] = @value
-			body[:time_stamp] = @time_stamp
+			body[:time_stamp] = @time_stamp.to_f
 		end
 	end
 

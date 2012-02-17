@@ -26,7 +26,7 @@ describe ZeroMQ do
 			message.should be_a RawDataPoint
 			message.path.should == 'system/memory'
 			message.component.should == 'cache'
-			message.time_stamp.should == 2.5
+			message.time_stamp.should == Time.at(2.5).utc
 			message.value.should == 123
 		end
 
