@@ -10,28 +10,34 @@ class Tag < Array
 	end
 
 	def match?(value)
-		pattern_set = if value.is_a?(TagPatternSet)
+		pattern_set = if value.is_a?(TagExpression)
 			value
 		elsif value.is_a?(TagPattern)
-			TagPatternSet.new([value])
+			TagExpression.new([value])
 		else
-			TagPatternSet.new(value)
+			TagExpression.new(value)
 		end
 
-		pattern_set.each do |pattern|
-			tag = self.dup
-		
-			# stupid and slow but works
-			while tag.length >= pattern.length
-				return true if tag.take(pattern.length).zip(pattern).all? do |tag_component, pattern_component|
-					if pattern_component.is_a? Regexp
-						tag_component =~ pattern_component
-					else
-						tag_component.downcase == pattern_component.downcase
-					end
+		pattern_set.any? do |pattern|
+			match_pattern(pattern)
+		end
+	end
+
+	private
+
+	def match_pattern(pattern)
+		tag = self.dup
+	
+		# stupid and slow but works
+		while tag.length >= pattern.length
+			return true if tag.take(pattern.length).zip(pattern).all? do |tag_component, pattern_component|
+				if pattern_component.is_a? Regexp
+					tag_component =~ pattern_component
+				else
+					tag_component.downcase == pattern_component.downcase
 				end
-				tag.shift
 			end
+			tag.shift
 		end
 
 		return false
@@ -51,9 +57,19 @@ class TagSet < Set
 		to_a.map{|tag| tag.to_s}.sort.join(', ')
 	end
 
-	def match?(pattern)
-		any? do |tag|
-			tag.match?(pattern)
+	def match?(value)
+		pattern_set = if value.is_a?(TagExpression)
+			value
+		elsif value.is_a?(TagPattern)
+			TagExpression.new([value])
+		else
+			TagExpression.new(value)
+		end
+
+		pattern_set.all? do |pattern|
+			self.any? do |tag|
+				tag.match? pattern
+			end
 		end
 	end
 end
@@ -81,7 +97,7 @@ class TagPattern < Array
 	end
 end
 
-class TagPatternSet < Set
+class TagExpression < Set
 	def initialize(value)
 		if value.is_a? String
 			super value.split(',').map{|tag| TagPattern.new(tag)}

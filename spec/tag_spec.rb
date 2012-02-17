@@ -25,17 +25,6 @@ shared_examples_for 'TagPattern machable' do
 	it 'matching should work with string' do
 		subject.should be_match('MEMORY:heapspace')
 		subject.should be_match('memory:/SPA/')
-
-		subject.should be_match('dafssdf, memory:/SPA/, dafds')
-		subject.should be_match('MEMORY:heapspace, dafssdf, memory:/SPA/, dafds')
-
-		subject.should_not be_match('fads, dafssdf, fdas, dafds')
-	end
-
-	it 'should match against TagPatternSet' do
-		subject.should be_match(TagPatternSet.new('java://:HeapSpace, asfdasd, afsderw'))
-		subject.should be_match(TagPatternSet.new('dfassde, MEMORY:heapspace, /me.*ory/'))
-		subject.should_not be_match(TagPatternSet.new('ewrad, ewrad, fda'))
 	end
 
 	it 'should match against empty regexp pattern' do
@@ -68,6 +57,17 @@ describe Tag do
 	end
 
 	it_behaves_like 'TagPattern machable'
+
+	it 'should match TagExpression if any TagPattern maches this tag' do
+		subject.should be_match(TagExpression.new('java://:HeapSpace, asfdasd, afsderw'))
+		subject.should be_match(TagExpression.new('dfassde, MEMORY:heapspace, /me.*ory/'))
+		subject.should_not be_match(TagExpression.new('ewrad, ewrad, fda'))
+
+		subject.should be_match('dafssdf, memory:/SPA/, dafds')
+		subject.should be_match('MEMORY:heapspace, dafssdf, memory:/SPA/, dafds')
+
+		subject.should_not be_match('fads, dafssdf, fdas, dafds')
+	end
 end
 
 describe TagSet do
@@ -113,6 +113,17 @@ describe TagSet do
 	it 'should match abc tag' do
 		subject.should be_match(TagPattern.new('abc'))
 	end
+
+	it 'should match TagExpression if all TagPatterns maches any tag in this set' do
+		subject.should be_match(TagExpression.new('java://:HeapSpace, MEMORY, abc'))
+		subject.should be_match(TagExpression.new('/me.*ory/'))
+		subject.should_not be_match(TagExpression.new('MEMORY, abc, fda'))
+
+		subject.should be_match('abc, memory:/SPA/')
+		subject.should be_match('MEMORY:heapspace, memory:/SPA/')
+
+		subject.should_not be_match('MEMORY:heapspace, memory:/SPA/, xyz')
+	end
 end
 
 describe TagPattern do
@@ -132,9 +143,9 @@ describe TagPattern do
 	end
 end
 
-describe TagPatternSet do
+describe TagExpression do
 	subject do
-		TagPatternSet[TagPattern.new('java:memory://:/space/'), TagPattern.new('//')]
+		TagExpression[TagPattern.new('java:memory://:/space/'), TagPattern.new('//')]
 	end
 
 	it 'should convert to string in alphabetical order' do
@@ -157,7 +168,7 @@ describe TagPatternSet do
 	end
 
 	it 'should construct from lazy formatted string' do
-		ts = TagPatternSet.new('   xyz,memory, java:memory://:PermGem,   /loc/:magi ')
+		ts = TagExpression.new('   xyz,memory, java:memory://:PermGem,   /loc/:magi ')
 		ts.to_s.should == '/loc/:magi, java:memory://:PermGem, memory, xyz'
 		ts.should include(TagPattern.new('/loc/:magi'))
 		ts.should include(TagPattern.new('memory'))
@@ -166,7 +177,7 @@ describe TagPatternSet do
 	end
 
 	it 'should construct from anything converable to array of strings' do
-		ts = TagPatternSet.new(Set['/xyz/', :abc, 1])
+		ts = TagExpression.new(Set['/xyz/', :abc, 1])
 		ts.to_s.should == '/xyz/, 1, abc'
 		ts.should include(TagPattern.new('1'))
 		ts.should include(TagPattern.new('abc'))
