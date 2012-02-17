@@ -1,3 +1,5 @@
+require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
+
 shared_examples_for 'TagPattern machable' do
 	it 'should match sub components with order' do
 		subject.should be_match(TagPattern.new('java'))
