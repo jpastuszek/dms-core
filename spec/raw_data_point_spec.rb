@@ -23,6 +23,10 @@ describe RawDataPoint do
 		m[:component].should == 'cache'
 		m[:value].should == 123
 		m[:time_stamp].should == 2.35
+
+		expect {
+			m.to_s
+		}.to_not raise_error
 	end
 
 	it "can be converted to Message - with topic" do

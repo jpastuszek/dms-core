@@ -19,5 +19,9 @@ class DataType
 		data_type = @@data_types[message.data_type] or raise DataTypeError::UnknowndDataTypeError, message.data_type
 		data_type.from_message(message)
 	end
+
+	def self.to_time(value)
+		value.is_a?(Time) ? value.utc : Time.at(value.to_f).utc
+	end
 end
 
