@@ -34,7 +34,7 @@ module DSL
 		end
 	end
 
-	def dsl_values(name, default = [])
+	def dsl_variables(name, default = [])
 		dsl_object.instance_eval do
 			@variables ||= {}
 			@variables[name] = default.is_a?(Array) ? default : [default]

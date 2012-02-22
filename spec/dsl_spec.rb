@@ -60,9 +60,9 @@ describe DSL do
 			test = Class.new do
 				include DSL
 				def initialize(&block)
-					dsl_values :test, [1, 2, 3]
-					dsl_values :abc, 99
-					dsl_values :xyz
+					dsl_variables :test, [1, 2, 3]
+					dsl_variables :abc, 99
+					dsl_variables :xyz
 					dsl &block
 				end
 				attr_reader :test, :abc, :xyz
@@ -78,9 +78,9 @@ describe DSL do
 			test = Class.new do
 				include DSL
 				def initialize(&block)
-					dsl_values :test, [1, 2, 3]
-					dsl_values :abc, 99
-					dsl_values :xyz
+					dsl_variables :test, [1, 2, 3]
+					dsl_variables :abc, 99
+					dsl_variables :xyz
 					dsl &block
 				end
 				attr_reader :test, :abc, :xyz
