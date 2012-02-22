@@ -121,6 +121,29 @@ describe DSL do
 		t.test.should == ['hello', 'world']
 	end
 
+	it 'should allow defining custom handlers that can pass a block' do
+		test = Class.new do
+			include DSL
+			def initialize(&block)
+				@test = []
+
+				dsl_method :test do |v1, &block|
+					@test << v1
+					@test << block.call
+				end
+
+				dsl &block
+			end
+			attr_reader :test
+		end
+
+		t = test.new do
+			test('hello'){'world'}
+		end
+
+		t.test.should == ['hello', 'world']
+	end
+
 	it 'should raise error on undefined method call' do
 		DSLTest = Class.new do
 			include DSL
