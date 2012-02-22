@@ -102,13 +102,11 @@ describe DSL do
 		test = Class.new do
 			include DSL
 			def initialize(&block)
-				test = []
+				@test = []
 
 				dsl_method :test do |v1|
-					test << v1
+					@test << v1
 				end
-
-				@test = test
 
 				dsl &block
 			end

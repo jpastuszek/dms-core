@@ -46,7 +46,9 @@ module DSL
 	end
 
 	def dsl_method(name, &block) 
-		dsl_object.define_singleton_method(name, &block)
+		dsl_object.define_singleton_method(name) do |*args|
+			block.call(*args)
+		end
 	end
 
 	def dsl(name = self.class.name || 'DSL', &block)
