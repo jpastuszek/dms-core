@@ -51,7 +51,7 @@ module DSL
 		end
 	end
 
-	def dsl_chain(name, chain_class, &block) 
+	def dsl_nest(name, chain_class, &block) 
 		dsl_object.define_singleton_method(name) do |*args, &method_block|
 			block.call(chain_class.new(*args, &method_block))
 		end

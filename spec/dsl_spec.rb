@@ -146,8 +146,8 @@ describe DSL do
 		end
 	end
 
-	describe 'chained DSL objects' do
-		it 'should allow to chain DSL objects' do
+	describe 'nested DSL objects' do
+		it 'should allow to nesting DSL objects' do
 			class1 = Class.new do
 				include DSL
 
@@ -165,7 +165,7 @@ describe DSL do
 
 					@test = []
 
-					dsl_chain :method1, class2 do |object2|
+					dsl_nest :method1, class2 do |object2|
 						@test << object2
 					end
 
