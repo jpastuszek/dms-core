@@ -146,6 +146,48 @@ describe DSL do
 		end
 	end
 
+	describe 'chained DSL objects' do
+		it 'should allow to chain DSL objects' do
+			class1 = Class.new do
+				include DSL
+
+				def initialize(&block)
+					class2 = Class.new do
+						include DSL
+
+						def initialize(value, &block)
+							@value = value
+							dsl_variable :method2
+							dsl &block
+						end
+						attr_reader :value, :method2
+					end
+
+					@test = []
+
+					dsl_chain :method1, class2 do |object2|
+						@test << object2
+					end
+
+					dsl &block
+				end
+				attr_reader :test
+			end
+
+			t = class1.new do
+				method1('hello') do
+					method2('world')
+				end
+			end
+
+			t.test.should have(1).object
+
+			object = t.test.shift
+			object.value.should == 'hello'
+			object.method2.should == 'world'
+		end
+	end
+
 	it 'should raise error on undefined method call' do
 		DSLTest = Class.new do
 			include DSL
