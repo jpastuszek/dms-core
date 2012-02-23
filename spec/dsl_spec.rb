@@ -144,6 +144,28 @@ describe DSL do
 
 			t.test.should == ['hello', 'world']
 		end
+
+		it 'should pass block return value to DSL to allow chaining' do
+			test = Class.new do
+				include DSL
+				def initialize(&block)
+					@test = []
+
+					dsl_method :test do |v1, &block|
+						@test << v1
+						@test << block.call
+						42
+					end
+
+					dsl &block
+				end
+				attr_reader :test
+			end
+
+			t = test.new do
+				test('hello'){'world'}.should == 42
+			end
+		end
 	end
 
 	describe 'nested DSL objects' do
