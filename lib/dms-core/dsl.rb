@@ -57,13 +57,14 @@ module DSL
 		end
 	end
 
-	def dsl(name = self.class.name || 'DSL', &block)
+	def dsl(*args, &block)
+		name = self.class.name || 'DSL'
 		dsl_object.define_singleton_method(:inspect) do
 			name
 		end
 
 		if block
-			dsl_object.instance_eval(&block)
+			dsl_object.instance_exec(*args, &block)
 		end
 
 		variables = dsl_object.instance_variable_get(:@variables)

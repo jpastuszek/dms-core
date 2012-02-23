@@ -228,22 +228,19 @@ describe DSL do
 		}.to raise_error(NoMethodError, "undefined method `abc' for DSLTest:DSL::Env")
 	end
 
-	it 'should allow to specify name for DSL object inspect' do
+	it 'should allow passing arguments to DSL block' do
 		test = Class.new do
 			include DSL
 			def initialize(&block)
 				dsl_variable :xyz
-				dsl 'Hello World DSL', &block
+				dsl 'hello', 'world', &block
 			end
 			attr_reader :test, :xyz
 		end
 
-		expect {
-			test.new do
-				xyz 'hello world'
-				abc 1
-			end
-		}.to raise_error(NoMethodError, "undefined method `abc' for Hello World DSL:DSL::Env")
+		test.new do |hello, world|
+			xyz hello + ' ' + world
+		end.xyz.should == 'hello world'
 	end
 end
 
