@@ -98,50 +98,52 @@ describe DSL do
 		end 
 	end
 
-	it 'should allow defining custom handlers' do
-		test = Class.new do
-			include DSL
-			def initialize(&block)
-				@test = []
+	describe 'custom method handler' do
+		it 'when used in DSL should call a block with parameters' do
+			test = Class.new do
+				include DSL
+				def initialize(&block)
+					@test = []
 
-				dsl_method :test do |v1|
-					@test << v1
+					dsl_method :test do |v1|
+						@test << v1
+					end
+
+					dsl &block
 				end
-
-				dsl &block
+				attr_reader :test
 			end
-			attr_reader :test
+
+			t = test.new do
+				test 'hello'
+				test 'world'
+			end
+
+			t.test.should == ['hello', 'world']
 		end
 
-		t = test.new do
-			test 'hello'
-			test 'world'
-		end
+		it 'should allow passing a block' do
+			test = Class.new do
+				include DSL
+				def initialize(&block)
+					@test = []
 
-		t.test.should == ['hello', 'world']
-	end
+					dsl_method :test do |v1, &block|
+						@test << v1
+						@test << block.call
+					end
 
-	it 'should allow defining custom handlers that can pass a block' do
-		test = Class.new do
-			include DSL
-			def initialize(&block)
-				@test = []
-
-				dsl_method :test do |v1, &block|
-					@test << v1
-					@test << block.call
+					dsl &block
 				end
-
-				dsl &block
+				attr_reader :test
 			end
-			attr_reader :test
-		end
 
-		t = test.new do
-			test('hello'){'world'}
-		end
+			t = test.new do
+				test('hello'){'world'}
+			end
 
-		t.test.should == ['hello', 'world']
+			t.test.should == ['hello', 'world']
+		end
 	end
 
 	it 'should raise error on undefined method call' do
