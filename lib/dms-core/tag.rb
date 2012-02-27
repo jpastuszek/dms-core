@@ -40,6 +40,10 @@ class Tag < Array
 		end
 	end
 
+	def inspect
+		"Tag#{super}"
+	end
+
 	private
 
 	def match_pattern(pattern)
@@ -112,6 +116,10 @@ class TagPattern < Array
 			end
 		end.join(':')
 	end
+
+	def inspect
+		"TagPattern#{super}"
+	end
 end
 
 class TagExpression < Set
@@ -125,6 +133,10 @@ class TagExpression < Set
 
 	def to_s
 		to_a.map{|tag| tag.to_s}.sort.join(', ')
+	end
+
+	def inspect
+		"TagExpression#{to_a.map{|tag| tag.to_s}.sort.inspect}"
 	end
 end
 
