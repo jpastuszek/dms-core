@@ -27,15 +27,7 @@ class Tag < Array
 	end
 
 	def match?(value)
-		pattern_set = if value.is_a?(TagExpression)
-			value
-		elsif value.is_a?(TagPattern)
-			TagExpression.new([value])
-		else
-			TagExpression.new(value)
-		end
-
-		pattern_set.any? do |pattern|
+		value.to_tag_expression.any? do |pattern|
 			match_pattern(pattern)
 		end
 	end
@@ -79,15 +71,7 @@ class TagSet < Set
 	end
 
 	def match?(value)
-		pattern_set = if value.is_a?(TagExpression)
-			value
-		elsif value.is_a?(TagPattern)
-			TagExpression.new([value])
-		else
-			TagExpression.new(value)
-		end
-
-		pattern_set.all? do |pattern|
+		value.to_tag_expression.all? do |pattern|
 			self.any? do |tag|
 				tag.match? pattern
 			end
@@ -117,6 +101,10 @@ class TagPattern < Array
 		end.join(':')
 	end
 
+	def to_tag_expression
+		TagExpression.new([self])
+	end
+
 	def inspect
 		"TagPattern#{super}"
 	end
@@ -135,8 +123,18 @@ class TagExpression < Set
 		to_a.map{|tag| tag.to_s}.sort.join(', ')
 	end
 
+	def to_tag_expression
+		self
+	end
+
 	def inspect
 		"TagExpression#{to_a.map{|tag| tag.to_s}.sort.inspect}"
+	end
+end
+
+class String
+	def to_tag_expression
+		TagExpression.new(self)
 	end
 end
 

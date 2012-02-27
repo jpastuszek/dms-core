@@ -200,5 +200,28 @@ describe TagExpression do
 		ts.should include(TagPattern.new('abc'))
 		ts.should include(TagPattern.new('/xyz/'))
 	end
+
+	context 'conversion' do
+		it 'from string' do
+			ts = '   xyz,memory, java:memory://:PermGem,   /loc/:magi '.to_tag_expression
+			ts.should be_a TagExpression
+			ts.should include(TagPattern.new('/loc/:magi'))
+			ts.should include(TagPattern.new('memory'))
+			ts.should include(TagPattern.new('xyz'))
+			ts.should include(TagPattern.new('java:memory://:PermGem'))
+		end
+
+		it 'from TagPattern' do
+			ts = TagPattern.new('/loc/:magi').to_tag_expression
+			ts.should be_a TagExpression
+			ts.should include(TagPattern.new('/loc/:magi'))
+		end
+
+		it 'from itself' do
+			ts = TagExpression[TagPattern.new('java:memory://:/space/'), TagPattern.new('//')].to_tag_expression
+			ts.should include(TagPattern.new('java:memory://:/space/'))
+			ts.should include(TagPattern.new('//'))
+		end
+	end
 end
 
