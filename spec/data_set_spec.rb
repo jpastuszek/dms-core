@@ -19,7 +19,7 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe DataSet do
 	subject do
-		DataSet.new('memory', 'location:magi, system:memory', 'B', Time.at(100), Time.at(0)) do
+		DataSet.new('memory', 'location:magi, system:memory', Time.at(100), Time.at(0)) do
 			component_data 'free', 1, 1234
 			component_data 'free', 2, 1235
 			component_data 'used', 1, 3452
@@ -33,9 +33,8 @@ describe DataSet do
 		subject.tag_set.should be_match('system:memory')
 	end
 
-	it 'takes type_name, unit' do
+	it 'takes type_name' do
 		subject.type_name.should == 'memory'
-		subject.unit.should == 'B'
 	end
 
 	it 'takes time_from, time_to in UTC' do
@@ -62,7 +61,6 @@ describe DataSet do
 
 		m[:tag_set].should == 'location:magi, system:memory'
 		m[:type_name].should == 'memory'
-		m[:unit].should == 'B'
 		m[:time_from].should == 100
 		m[:time_to].should == 0
 		m[:component_data].should include('free')

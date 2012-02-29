@@ -162,7 +162,7 @@ describe ZeroMQ do
 						message.time_to.should == Time.at(0).utc
 						message.granularity.should == 1.0
 
-						rep.send(DataSet.new('memory', 'location:magi, system:memory', 'B', Time.at(100), Time.at(0)) do
+						rep.send(DataSet.new('memory', 'location:magi, system:memory', Time.at(100), Time.at(0)) do
 							component_data 'free', 1, 1234
 							component_data 'free', 2, 1235
 							component_data 'used', 1, 3452
@@ -198,14 +198,14 @@ describe ZeroMQ do
 						message.time_to.should == Time.at(0).utc
 						message.granularity.should == 1.0
 
-						rep.send(DataSet.new('memory', 'location:magi, system:memory', 'B', Time.at(100), Time.at(0)) do
+						rep.send(DataSet.new('memory', 'location:magi, system:memory', Time.at(100), Time.at(0)) do
 							component_data 'free', 1, 1234
 							component_data 'free', 2, 1235
 							component_data 'used', 1, 3452
 							component_data 'used', 2, 3451
 						end, sendmore: true)
 
-						rep.send(DataSet.new('CPU usage', 'location:magi, system:CPU usage', 'B', Time.at(100), Time.at(0)) do
+						rep.send(DataSet.new('CPU usage', 'location:magi, system:CPU usage', Time.at(100), Time.at(0)) do
 							component_data 'user', 1, 1234
 							component_data 'user', 2, 1235
 							component_data 'system', 1, 3452
