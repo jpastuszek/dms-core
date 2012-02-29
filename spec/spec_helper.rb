@@ -31,4 +31,18 @@ end
 require 'capture-output'
 require 'tmpdir'
 require 'tempfile'
+require 'retry-this'
+require 'timeout'
+
+def keep_trying
+	RetryThis.retry_this(
+		:times => 10,
+		:sleep => 0.01,
+		:error_types => [Timeout::Error]
+	) do |attempt|
+		Timeout.timeout(0.01) do
+			yield
+		end
+	end
+end
 

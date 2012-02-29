@@ -26,14 +26,22 @@ describe ZeroMQ do
 		ZeroMQ.binding_version.should match(/\d+\.\d+\.\d+/)
 	end
 
-	describe "push and pull" do
+	let :test_address do
+		'ipc:///tmp/dms-core-test'
+	end
+
+	let :test_raw_data_point do
+		RawDataPoint.new('magi', 'system/memory', 'cache', 123, Time.at(2.5))
+	end
+
+	describe "PUSH and PULL" do
 		it "should allow sending and receiving RawDataPoint object" do
 			message = nil
 
 			ZeroMQ.new do |zmq|
-				zmq.pull_bind('ipc:///tmp/dms-core-test') do |pull|
-					zmq.push_connect('ipc:///tmp/dms-core-test') do |push|
-						push.send RawDataPoint.new('magi', 'system/memory', 'cache', 123, Time.at(2.5))
+				zmq.pull_bind(test_address) do |pull|
+					zmq.push_connect(test_address) do |push|
+						push.send test_raw_data_point
 					end
 
 					message = pull.recv
@@ -59,6 +67,75 @@ describe ZeroMQ do
 						end
 					}.to raise_error ZeroMQError::OperationFailedError, "Protocol not supported"
 				end
+		end
+	end
+
+	describe 'PUB and SUB' do
+		it 'should allow sending and receinving RawDataPoint object' do
+			message = nil
+
+			ZeroMQ.new do |zmq|
+				zmq.sub_bind(test_address) do |sub|
+					sub.subscribe('RawDataPoint')
+
+					zmq.pub_connect(test_address) do |pub|
+						pub.send test_raw_data_point
+					end
+
+					message = sub.recv
+				end
+			end
+
+			message.should be_a RawDataPoint
+			message.path.should == 'system/memory'
+			message.component.should == 'cache'
+			message.time_stamp.should == Time.at(2.5).utc
+			message.value.should == 123
+		end
+
+		it 'should allow sending and receinving RawDataPoint object - reverse bind/connect' do
+			message = nil
+
+			ZeroMQ.new do |zmq|
+				zmq.pub_bind(test_address) do |pub|
+					zmq.sub_connect(test_address) do |sub|
+						sub.subscribe('RawDataPoint')
+
+						keep_trying do
+							pub.send test_raw_data_point
+							message = sub.recv
+						end
+					end
+				end
+			end
+
+			message.should be_a RawDataPoint
+			message.path.should == 'system/memory'
+			message.component.should == 'cache'
+			message.time_stamp.should == Time.at(2.5).utc
+			message.value.should == 123
+		end
+
+		it 'should allow sending and receinving RawDataPoint object - with topic' do
+			message = nil
+
+			ZeroMQ.new do |zmq|
+				zmq.sub_bind(test_address) do |sub|
+					sub.subscribe('RawDataPoint', 'hello world')
+
+					zmq.pub_connect(test_address) do |pub|
+						pub.send test_raw_data_point, 'hello world'
+					end
+
+					message = sub.recv
+				end
+			end
+
+			message.should be_a RawDataPoint
+			message.path.should == 'system/memory'
+			message.component.should == 'cache'
+			message.time_stamp.should == Time.at(2.5).utc
+			message.value.should == 123
 		end
 	end
 end
