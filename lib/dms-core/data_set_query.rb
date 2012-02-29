@@ -54,7 +54,7 @@ class DataSetQuery < DataType
 	end
 
 	def to_s
-		"DataSetQuery[#{query_id}][#{tag_expression.to_s}]: #{Time.at(time_from).utc.strftime('%Y-%m-%d %H:%M:%S.%L')} #{Time.at(time_to).utc.strftime('%Y-%m-%d %H:%M:%S.%L')}"
+		"DataSetQuery[#{query_id}][#{tag_expression.to_s}]: #{Time.at(time_from).utc.strftime('%Y-%m-%d %H:%M:%S.%L')} >> #{Time.at(time_to).utc.strftime('%Y-%m-%d %H:%M:%S.%L')} (#{time_from.to_f - time_to.to_f} seconds)"
 	end
 
 	register(self)

@@ -15,8 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with Distributed Monitoring System.  If not, see <http://www.gnu.org/licenses/>.
 
-require 'dms-core/raw_data_point'
-require 'dms-core/data_set'
-require 'dms-core/data_set_query'
-require 'dms-core/no_results'
+require 'dms-core/data_type'
+require 'dms-core/tag'
+
+class NoResults < DataType
+	def self.from_message(message)
+		self.new
+	end
+
+	def to_message(topic = '')
+		Message.new(self.class.name, topic, 0) do |body|
+		end
+	end
+
+	def to_s
+		"NoResults"
+	end
+
+	register(self)
+end
 
