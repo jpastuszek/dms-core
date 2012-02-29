@@ -56,6 +56,8 @@ class ZeroMQ
 	class Socket
 		include ZeroMQError
 
+		attr_reader :socket
+
 		def connect(address)
 			ok? @socket.connect(address)
 			self
@@ -124,6 +126,39 @@ class ZeroMQ
 
 		def more?
 			@receiver.more?
+		end
+	end
+
+	class Poller
+		include ZeroMQError
+
+		def initialize
+			@sockets = {}
+			@poller = ZMQ::Poller.new
+		end
+
+		def register(object)
+			case object
+			when Sender
+				@poller.register_writable(object.socket)
+			when Receiver
+				@poller.register_readable(object.socket)
+			when SenderReceiver
+				@poller.register(object.socket)
+			else
+				raise TypeError, 'expected Sender, Receiver or SenderReceiver type of object'
+			end
+
+			@sockets[object.socket] = object
+		end
+
+		def poll(timeout = :blocking)
+			timeout *= 1000 unless timeout == :blocking or timeout == -1
+			ok? @poller.poll(timeout)
+			return false if @poller.readables.empty? and @poller.writables.empty?
+
+			yield @poller.readables.map{|socket| @sockets[socket]}, @poller.writables.map{|socket| @sockets[socket]}
+			return true
 		end
 	end
 

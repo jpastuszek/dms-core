@@ -30,8 +30,16 @@ describe ZeroMQ do
 		'ipc:///tmp/dms-core-test'
 	end
 
+	let :test_address2 do
+		'ipc:///tmp/dms-core-test2'
+	end
+
 	let :test_raw_data_point do
 		RawDataPoint.new('magi', 'system/memory', 'cache', 123, Time.at(2.5))
+	end
+
+	let :test_raw_data_point2 do
+		RawDataPoint.new('magi', 'system/CPU usage', 'user', 123, Time.at(2.5))
 	end
 
 	describe "PUSH and PULL" do
@@ -230,6 +238,56 @@ describe ZeroMQ do
 					end
 				end
 			end
+		end
+	end
+
+	describe ZeroMQ::Poller do
+		it 'should support polling for readable sockets' do
+			messages = []
+
+			ZeroMQ.new do |zmq|
+				zmq.pull_bind(test_address) do |pull1|
+					zmq.pull_bind(test_address2) do |pull2|
+						poller = ZeroMQ::Poller.new
+						poller.register(pull1)
+						poller.register(pull2)
+
+						zmq.push_connect(test_address) do |push1|
+							push1.send test_raw_data_point
+						end
+						zmq.push_connect(test_address2) do |push2|
+							push2.send test_raw_data_point2
+						end
+
+						begin
+							poller.poll(4) do |readables, writables|
+								readables.should_not be_empty
+								writables.should be_empty
+
+								readables.each do |receiver|
+									messages << receiver.recv
+								end
+							end.should be_true
+						end while messages.length < 2
+					end
+				end
+			end
+
+			messages.should have(2).messages
+
+			message = messages.shift
+			message.should be_a RawDataPoint
+			message.path.should == 'system/memory'
+			message.component.should == 'cache'
+			message.time_stamp.should == Time.at(2.5).utc
+			message.value.should == 123
+
+			message = messages.shift
+			message.should be_a RawDataPoint
+			message.path.should == 'system/CPU usage'
+			message.component.should == 'user'
+			message.time_stamp.should == Time.at(2.5).utc
+			message.value.should == 123
 		end
 	end
 end
