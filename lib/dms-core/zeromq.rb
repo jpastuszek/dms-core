@@ -76,8 +76,11 @@ class ZeroMQ
 			ok? @socket.setsockopt(ZMQ::LINGER, (linger * 1000).to_i)
 		end
 
-		def send(data_type, topic = '')
-			ok? @socket.send_string(data_type.to_message(topic).to_s)
+		def send(data_type, options = {})
+			topic = options[:topic] || nil
+			flags = 0
+			flags |= ZMQ::SNDMORE if options[:sendmore]
+			ok? @socket.send_string(data_type.to_message(topic).to_s, flags)
 		end
 	end
 
@@ -98,6 +101,10 @@ class ZeroMQ
 			ok? @socket.recv_string(str)
 			DataType.from_message(Message.load(str))
 		end
+
+		def more?
+			@socket.more_parts?
+		end
 	end
 
 	class SenderReceiver < Socket
@@ -107,12 +114,16 @@ class ZeroMQ
 			@receiver = Receiver.new(socket, hwm, swap, buffer)
 		end
 
-		def send(data_type)
-			@sender.send(data_type)
+		def send(data_type, options = {})
+			@sender.send(data_type, options)
 		end
 
 		def recv
 			@receiver.recv
+		end
+
+		def more?
+			@receiver.more?
 		end
 	end
 

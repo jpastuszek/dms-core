@@ -124,7 +124,7 @@ describe ZeroMQ do
 					sub.subscribe('RawDataPoint', 'hello world')
 
 					zmq.pub_connect(test_address) do |pub|
-						pub.send test_raw_data_point, 'hello world'
+						pub.send test_raw_data_point, topic: 'hello world'
 					end
 
 					message = sub.recv
@@ -171,6 +171,62 @@ describe ZeroMQ do
 						message.component_data['used'][0][0].should == Time.at(1).utc
 						message.component_data['used'][0][1].should == 3452
 						message.component_data.should have_key('free')
+					end
+				end
+			end
+		end
+
+		it 'should allow sending DataSetQuery and receinving multiple DataSet objects' do
+			ZeroMQ.new do |zmq|
+				zmq.rep_bind(test_address) do |rep|
+					zmq.req_connect(test_address) do |req|
+						req.send DataSetQuery.new('abc123', 'location:/magi\./, system:memory', Time.at(100), Time.at(0), 1)
+
+						message = rep.recv
+						message.should be_a DataSetQuery
+						message.query_id.should == 'abc123'
+						message.tag_expression.to_s.should == 'location:/magi\./, system:memory'
+						message.time_from.should == Time.at(100).utc
+						message.time_to.should == Time.at(0).utc
+						message.granularity.should == 1.0
+
+						rep.send(DataSet.new('memory', 'location:magi, system:memory', 'B', Time.at(100), Time.at(0)) do
+							component_data 'free', 1, 1234
+							component_data 'free', 2, 1235
+							component_data 'used', 1, 3452
+							component_data 'used', 2, 3451
+						end, sendmore: true)
+
+						rep.send(DataSet.new('CPU usage', 'location:magi, system:CPU usage', 'B', Time.at(100), Time.at(0)) do
+							component_data 'user', 1, 1234
+							component_data 'user', 2, 1235
+							component_data 'system', 1, 3452
+							component_data 'system', 2, 3451
+						end)
+
+						message = req.recv
+						message.tag_set.should be_match('location:magi')
+						message.tag_set.should be_match('system:memory')
+						message.time_from.should be_utc
+						message.time_to.should be_utc
+						message.component_data.should be_a(Hash)
+						message.component_data.should have_key('used')
+						message.component_data['used'][0][0].should == Time.at(1).utc
+						message.component_data['used'][0][1].should == 3452
+						message.component_data.should have_key('free')
+
+						req.more?.should be_true
+
+						message = req.recv
+						message.tag_set.should be_match('location:magi')
+						message.tag_set.should be_match('system:CPU usage')
+						message.time_from.should be_utc
+						message.time_to.should be_utc
+						message.component_data.should be_a(Hash)
+						message.component_data.should have_key('user')
+						message.component_data['system'][0][0].should == Time.at(1).utc
+						message.component_data['system'][0][1].should == 3452
+						message.component_data.should have_key('system')
 					end
 				end
 			end
