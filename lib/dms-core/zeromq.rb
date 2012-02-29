@@ -100,6 +100,22 @@ class ZeroMQ
 		end
 	end
 
+	class SenderReceiver < Socket
+		def initialize(socket, hwm, swap, buffer, linger)
+			@socket = socket
+			@sender = Sender.new(socket, hwm, swap, buffer, linger)
+			@receiver = Receiver.new(socket, hwm, swap, buffer)
+		end
+
+		def send(data_type)
+			@sender.send(data_type)
+		end
+
+		def recv
+			@receiver.recv
+		end
+	end
+
 	def initialize
 		have? @context = ZMQ::Context.create(1)
 		begin
@@ -145,6 +161,24 @@ class ZeroMQ
 		end
 	end
 
+	def connect_sender_receiver(type, address, hwm, swap, buffer, linger)
+		have? socket = @context.socket(type)
+		begin
+			yield SenderReceiver.new(socket, hwm, swap, buffer, linger).connect(address)
+		ensure
+			ok? socket.close
+		end
+	end
+
+	def bind_sender_receiver(type, address, hwm, swap, buffer, linger)
+		have? socket = @context.socket(type)
+		begin
+			yield SenderReceiver.new(socket, hwm, swap, buffer, linger).bind(address)
+		ensure
+			ok? socket.close
+		end
+	end
+
 	# PUSH/PULL
 	def pull_bind(address, hwm = 1000, swap = 0, buffer = 0, &block)
 		bind_receiver(ZMQ::PULL, address, hwm, swap, buffer, &block)
@@ -152,6 +186,15 @@ class ZeroMQ
 
 	def push_connect(address, hwm = 1000, swap = 0, buffer = 0, linger = 10, &block)
 		connect_sender(ZMQ::PUSH, address, hwm, swap, buffer, linger, &block)
+	end
+
+	# REQ/REP
+	def rep_bind(address, hwm = 1000, swap = 0, buffer = 0, linger = 10, &block)
+		bind_sender_receiver(ZMQ::REP, address, hwm, swap, buffer, linger, &block)
+	end
+
+	def req_connect(address, hwm = 1000, swap = 0, buffer = 0, linger = 10, &block)
+		connect_sender_receiver(ZMQ::REQ, address, hwm, swap, buffer, linger, &block)
 	end
 
 	# PUB/SUB
