@@ -19,7 +19,7 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe DataSetQuery do
 	subject do
-		DataSetQuery.new('abc123', 'location:/magi\./, system:memory', Time.at(100), Time.at(0), 1)
+		DataSetQuery.new('abc123', 'location:/magi\./, system:memory', Time.at(100), 100, 1)
 	end
 
 	it 'takes query id' do
@@ -31,11 +31,11 @@ describe DataSetQuery do
 		subject.tag_expression.to_s.should == 'location:/magi\./, system:memory'
 	end
 
-	it 'takes time_from, time_to in UTC' do
-		subject.time_from.should be_a(Time)
+	it 'takes time_from in UTC and time_span' do
+		subject.time_from.should be_a Time
 		subject.time_from.should be_utc
-		subject.time_to.should be_a(Time)
-		subject.time_to.should be_utc
+		subject.time_span.should be_a Float
+		subject.time_span.should == 100.0
 	end
 
 	it 'takse granularity' do
@@ -50,7 +50,7 @@ describe DataSetQuery do
 		m[:query_id].should == 'abc123'
 		m[:tag_expression].should == 'location:/magi\./, system:memory'
 		m[:time_from].should == 100
-		m[:time_to].should == 0
+		m[:time_span].should == 100.0
 		m[:granularity].should == 1.0
 
 		expect {
@@ -66,12 +66,11 @@ describe DataSetQuery do
 		Tag.new('location:magi.sigquit.net').should be_match(dt.tag_expression)
 		Tag.new('system:memory').should be_match(dt.tag_expression)
 		Tag.new('xyz').should_not be_match(dt.tag_expression)
-		dt.time_from.should be_a(Time)
+		dt.time_from.should be_a Time
 		dt.time_from.should be_utc
 		dt.time_from.should == Time.at(100).utc
-		dt.time_to.should be_a(Time)
-		dt.time_to.should be_utc
-		dt.time_to.should == Time.at(0).utc
+		dt.time_span.should be_a Float
+		dt.time_span.should == 100.0
 		dt.granularity.should == 1.0
 	end
 

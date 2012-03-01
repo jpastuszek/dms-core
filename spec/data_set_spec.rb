@@ -19,7 +19,7 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe DataSet do
 	subject do
-		DataSet.new('memory', 'location:magi, system:memory', Time.at(100), Time.at(0)) do
+		DataSet.new('memory', 'location:magi, system:memory', Time.at(100), 100) do
 			component_data 'free', 1, 1234
 			component_data 'free', 2, 1235
 			component_data 'used', 1, 3452
@@ -37,15 +37,14 @@ describe DataSet do
 		subject.type_name.should == 'memory'
 	end
 
-	it 'takes time_from, time_to in UTC' do
-		subject.time_from.should be_a(Time)
+	it 'takes time_from in UTC, time_span' do
+		subject.time_from.should be_a Time
 		subject.time_from.should be_utc
-		subject.time_to.should be_a(Time)
-		subject.time_to.should be_utc
+		subject.time_span.should be_a Float
 	end
 
 	it 'takes component data as a hash' do
-		subject.component_data.should be_a(Hash)
+		subject.component_data.should be_a Hash
 		subject.component_data.should have_key('used')
 		subject.component_data['used'][0][0].should be_a Time
 		subject.component_data['used'][0][0].should be_utc
@@ -62,7 +61,7 @@ describe DataSet do
 		m[:tag_set].should == 'location:magi, system:memory'
 		m[:type_name].should == 'memory'
 		m[:time_from].should == 100
-		m[:time_to].should == 0
+		m[:time_span].should == 100.0
 		m[:component_data].should include('free')
 		m[:component_data]['free'].should == [1.0, 1234, 2.0, 1235]
 		m[:component_data].should include('used')
@@ -80,11 +79,11 @@ describe DataSet do
 		dt.tag_set.should be_a TagSet
 		dt.tag_set.should be_match('location:magi')
 		dt.tag_set.should be_match('system:memory')
-		dt.time_from.should be_a(Time)
+		dt.time_from.should be_a Time
 		dt.time_from.should be_utc
-		dt.time_to.should be_a(Time)
-		dt.time_to.should be_utc
-		dt.component_data.should be_a(Hash)
+		dt.time_span.should be_a Float
+		dt.time_span.should == 100.0
+		dt.component_data.should be_a Hash
 		dt.component_data.should have_key('used')
 		dt.component_data['used'][0][0].should be_a Time
 		dt.component_data['used'][0][0].should be_utc

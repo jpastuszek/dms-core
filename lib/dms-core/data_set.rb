@@ -47,14 +47,14 @@ class DataSet < DataType
 	attr_reader :type_name
 	attr_reader :tag_set
 	attr_reader :time_from
-	attr_reader :time_to
+	attr_reader :time_span
 	attr_reader :component_data
 
-	def initialize(type_name, tag_set, time_from, time_to, &block)
+	def initialize(type_name, tag_set, time_from, time_span, &block)
 		@type_name = type_name.to_s
 		@tag_set = tag_set.is_a?(TagSet) ? tag_set : TagSet.new(tag_set)
 		@time_from = DataType.to_time(time_from)
-		@time_to = DataType.to_time(time_to)
+		@time_span = time_span.to_f
 		@component_data = ComponentData.new(&block)
 	end
 
@@ -63,7 +63,7 @@ class DataSet < DataType
 			message[:type_name], 
 			TagSet.new(message[:tag_set]), 
 			Time.at(message[:time_from]).utc,
-			Time.at(message[:time_to]).utc,
+			message[:time_span]
 		) do
 			message[:component_data].each_pair do |component, data|
 				data.each_slice(2) do |time, value|
@@ -78,7 +78,7 @@ class DataSet < DataType
 			body[:type_name] = @type_name
 			body[:tag_set] = @tag_set.to_s
 			body[:time_from] = @time_from.to_f
-			body[:time_to] = @time_to.to_f
+			body[:time_span] = @time_span
 			body[:component_data] = @component_data.to_transport
 		end
 	end
