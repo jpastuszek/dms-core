@@ -26,6 +26,60 @@ describe ZeroMQ do
 		ZeroMQ.binding_version.should match(/\d+\.\d+\.\d+/)
 	end
 
+	describe 'receiving' do
+		it "should allow specifing accepted classes" do
+			message = nil
+
+			ZeroMQ.new do |zmq|
+				zmq.pull_bind(test_address) do |pull|
+					zmq.push_connect(test_address) do |push|
+						push.send test_raw_data_point
+					end
+
+					expect {
+						pull.recv(RawDataPoint)
+					}.to_not raise_error
+				end
+			end
+
+			ZeroMQ.new do |zmq|
+				zmq.pull_bind(test_address) do |pull|
+					zmq.push_connect(test_address) do |push|
+						push.send test_raw_data_point
+					end
+
+					expect {
+						pull.recv(DataSetQuery, RawDataPoint)
+					}.to_not raise_error
+				end
+			end
+
+			ZeroMQ.new do |zmq|
+				zmq.pull_bind(test_address) do |pull|
+					zmq.push_connect(test_address) do |push|
+						push.send test_raw_data_point
+					end
+
+					expect {
+						pull.recv(DataSetQuery)
+					}.to raise_error ZeroMQ::Receiver::UnexpectedMessageType, 'received message of type: RawDataPoint, expected DataSetQuery'
+				end
+			end
+
+			ZeroMQ.new do |zmq|
+				zmq.pull_bind(test_address) do |pull|
+					zmq.push_connect(test_address) do |push|
+						push.send test_raw_data_point
+					end
+
+					expect {
+						pull.recv(DataSetQuery, DataSet)
+					}.to raise_error ZeroMQ::Receiver::UnexpectedMessageType, 'received message of type: RawDataPoint, expected DataSetQuery or DataSet'
+				end
+			end
+		end
+	end
+
 	let :test_address do
 		'ipc:///tmp/dms-core-test'
 	end

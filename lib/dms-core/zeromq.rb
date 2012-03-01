@@ -88,6 +88,12 @@ class ZeroMQ
 	end
 
 	class Receiver < Socket
+		class UnexpectedMessageType < IOError
+			def initialize(expected, message)
+				super "received message of type: #{message.class.name}, expected #{expected.join(' or ')}"
+			end
+		end
+
 		def initialize(socket, options = {})
 			@socket = socket
 
@@ -100,10 +106,13 @@ class ZeroMQ
 			ok? @socket.setsockopt(ZMQ::SUBSCRIBE, object.empty? ? '' : "#{object}/#{topic}")
 		end
 
-		def recv
+		def recv(*args)
+			expected_types = args
 			str = ""
 			ok? @socket.recv_string(str)
-			DataType.from_message(Message.load(str))
+			message = DataType.from_message(Message.load(str))
+			expected_types.any?{|et| message.is_a? et} or raise UnexpectedMessageType.new(expected_types, message) unless expected_types.empty?
+			message
 		end
 
 		def more?
