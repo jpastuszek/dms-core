@@ -76,7 +76,7 @@ describe DataSetQuery do
 	end
 
 	it '#to_s gives nice printout' do
-		subject.to_s.should == 'DataSetQuery[abc123][location:/magi\\./, system:memory]: 1970-01-01 00:01:40.000 1970-01-01 00:00:00.000'
+		subject.to_s.should == 'DataSetQuery[abc123][location:/magi\\./, system:memory]<1970-01-01 00:01:40.000,100.0>@1.0'
 	end
 end
 
