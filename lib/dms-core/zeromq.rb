@@ -127,6 +127,14 @@ class ZeroMQ
 		def more?
 			@receiver.more?
 		end
+
+		def recv_all
+			out = []
+			begin
+				out << recv
+			end while more?
+			out
+		end
 	end
 
 	class Poller
