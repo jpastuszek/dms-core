@@ -138,8 +138,8 @@ class ZeroMQ
 			@sender.send(data_type, options)
 		end
 
-		def recv
-			@receiver.recv
+		def recv(*expected_types)
+			@receiver.recv(*expected_types)
 		end
 
 		def more?
