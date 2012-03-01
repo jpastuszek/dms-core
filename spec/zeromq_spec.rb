@@ -18,72 +18,6 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe ZeroMQ do
-	it "should provide libzmq version" do
-		ZeroMQ.lib_version.should match(/\d+\.\d+\.\d+/)
-	end
-
-	it "should provide ruby binding version version" do
-		ZeroMQ.binding_version.should match(/\d+\.\d+\.\d+/)
-	end
-
-	describe 'receiving' do
-		it "should allow specifing accepted classes" do
-			message = nil
-
-			ZeroMQ.new do |zmq|
-				zmq.pull_bind(test_address) do |pull|
-					zmq.push_connect(test_address) do |push|
-						push.send test_raw_data_point
-					end
-
-					expect {
-						pull.recv(RawDataPoint)
-					}.to_not raise_error
-				end
-			end
-
-			ZeroMQ.new do |zmq|
-				zmq.pull_bind(test_address) do |pull|
-					zmq.push_connect(test_address) do |push|
-						push.send test_raw_data_point
-					end
-
-					expect {
-						pull.recv(DataSetQuery, RawDataPoint)
-					}.to_not raise_error
-				end
-			end
-
-			ZeroMQ.new do |zmq|
-				zmq.pull_bind(test_address) do |pull|
-					zmq.push_connect(test_address) do |push|
-						push.send test_raw_data_point
-					end
-
-					expect {
-						pull.recv(DataSetQuery)
-					}.to raise_error ZeroMQ::Receiver::UnexpectedMessageType, 'received message of type: RawDataPoint, expected DataSetQuery'
-				end
-			end
-
-			ZeroMQ.new do |zmq|
-				zmq.pull_bind(test_address) do |pull|
-					zmq.push_connect(test_address) do |push|
-						push.send test_raw_data_point
-					end
-
-					expect {
-						pull.recv(DataSetQuery, DataSet)
-					}.to raise_error ZeroMQ::Receiver::UnexpectedMessageType, 'received message of type: RawDataPoint, expected DataSetQuery or DataSet'
-				end
-			end
-		end
-	end
-
-	let :test_address do
-		'ipc:///tmp/dms-core-test'
-	end
-
 	let :test_address2 do
 		'ipc:///tmp/dms-core-test2'
 	end
@@ -94,6 +28,164 @@ describe ZeroMQ do
 
 	let :test_raw_data_point2 do
 		RawDataPoint.new('magi', 'system/CPU usage', 'user', 123, Time.at(2.5))
+	end
+
+	it "should provide libzmq version" do
+		ZeroMQ.lib_version.should match(/\d+\.\d+\.\d+/)
+	end
+
+	it "should provide ruby binding version version" do
+		ZeroMQ.binding_version.should match(/\d+\.\d+\.\d+/)
+	end
+
+	describe 'sending' do
+		it '#send should allow sending multiple objects' do
+			ZeroMQ.new do |zmq|
+				zmq.pull_bind(test_address) do |pull|
+					zmq.push_connect(test_address) do |push|
+						push.send test_raw_data_point, more: true
+						push.send test_raw_data_point2
+					end
+
+					message = pull.recv
+					message.should be_a RawDataPoint
+					message.path.should == 'system/memory'
+
+					pull.more?.should be_true
+					
+					message = pull.recv
+					message.should be_a RawDataPoint
+					message.path.should == 'system/CPU usage'
+
+					pull.more?.should be_false
+				end
+			end
+		end
+	end
+
+	describe 'receiving' do
+		describe '#recv' do
+			it "should allow specifing accepted classes" do
+				message = nil
+
+				ZeroMQ.new do |zmq|
+					zmq.pull_bind(test_address) do |pull|
+						zmq.push_connect(test_address) do |push|
+							push.send test_raw_data_point
+						end
+
+						expect {
+							pull.recv(RawDataPoint)
+						}.to_not raise_error
+					end
+				end
+
+				ZeroMQ.new do |zmq|
+					zmq.pull_bind(test_address) do |pull|
+						zmq.push_connect(test_address) do |push|
+							push.send test_raw_data_point
+						end
+
+						expect {
+							pull.recv(DataSetQuery, RawDataPoint)
+						}.to_not raise_error
+					end
+				end
+
+				ZeroMQ.new do |zmq|
+					zmq.pull_bind(test_address) do |pull|
+						zmq.push_connect(test_address) do |push|
+							push.send test_raw_data_point
+						end
+
+						expect {
+							pull.recv(DataSetQuery)
+						}.to raise_error ZeroMQ::Receiver::UnexpectedMessageType, 'received message of type: RawDataPoint, expected DataSetQuery'
+					end
+				end
+
+				ZeroMQ.new do |zmq|
+					zmq.pull_bind(test_address) do |pull|
+						zmq.push_connect(test_address) do |push|
+							push.send test_raw_data_point
+						end
+
+						expect {
+							pull.recv(DataSetQuery, DataSet)
+						}.to raise_error ZeroMQ::Receiver::UnexpectedMessageType, 'received message of type: RawDataPoint, expected DataSetQuery or DataSet'
+					end
+				end
+			end
+		end
+
+		describe '#recv_all' do
+			it 'should return all messages in array' do
+				ZeroMQ.new do |zmq|
+					zmq.pull_bind(test_address) do |pull|
+						zmq.push_connect(test_address) do |push|
+							push.send test_raw_data_point, more: true
+							push.send test_raw_data_point2
+						end
+
+						messages = pull.recv_all
+						messages.should have(2).raw_data_points
+
+						message = messages.shift
+						message.should be_a RawDataPoint
+						message.path.should == 'system/memory'
+						
+						message = messages.shift
+						message.should be_a RawDataPoint
+						message.path.should == 'system/CPU usage'
+					end
+				end
+			end
+
+			it 'should allow specifing accepted classes' do
+				ZeroMQ.new do |zmq|
+					zmq.pull_bind(test_address) do |pull|
+						zmq.push_connect(test_address) do |push|
+							push.send test_raw_data_point, more: true
+							push.send test_raw_data_point2
+						end
+
+						expect {
+							pull.recv_all(RawDataPoint)
+						}.to_not raise_error
+					end
+				end
+
+				ZeroMQ.new do |zmq|
+					zmq.pull_bind(test_address) do |pull|
+						zmq.push_connect(test_address) do |push|
+							push.send test_raw_data_point, more: true
+							push.send test_raw_data_point2
+						end
+
+						expect {
+							pull.recv_all(DataSet, RawDataPoint)
+						}.to_not raise_error
+					end
+				end
+
+				ZeroMQ.new do |zmq|
+					zmq.pull_bind(test_address) do |pull|
+						zmq.push_connect(test_address) do |push|
+							push.send test_raw_data_point, more: true
+							push.send test_raw_data_point2
+						end
+
+						expect {
+							pull.recv_all(DataSetQuery)
+						}.to raise_error ZeroMQ::Receiver::UnexpectedMessageType, 'received message of type: RawDataPoint, expected DataSetQuery'
+					end
+				end
+			end
+		end
+	end
+
+	let :test_address do
+		'ipc:///tmp/dms-core-test'
 	end
 
 	describe "PUSH and PULL" do
@@ -233,119 +325,6 @@ describe ZeroMQ do
 						message.component_data['used'][0][0].should == Time.at(1).utc
 						message.component_data['used'][0][1].should == 3452
 						message.component_data.should have_key('free')
-					end
-				end
-			end
-		end
-
-		it 'should allow sending DataSetQuery and receinving multiple DataSet objects' do
-			ZeroMQ.new do |zmq|
-				zmq.rep_bind(test_address) do |rep|
-					zmq.req_connect(test_address) do |req|
-						req.send DataSetQuery.new('abc123', 'location:/magi\./, system:memory', Time.at(100), 100, 1)
-
-						message = rep.recv
-						message.should be_a DataSetQuery
-						message.query_id.should == 'abc123'
-						message.tag_expression.to_s.should == 'location:/magi\./, system:memory'
-						message.time_from.should == Time.at(100).utc
-						message.time_span.should == 100.0
-						message.granularity.should == 1.0
-
-						rep.send(DataSet.new('memory', 'location:magi, system:memory', Time.at(100), 100) do
-							component_data 'free', 1, 1234
-							component_data 'free', 2, 1235
-							component_data 'used', 1, 3452
-							component_data 'used', 2, 3451
-						end, more: true)
-
-						rep.send(DataSet.new('CPU usage', 'location:magi, system:CPU usage', Time.at(100), 100) do
-							component_data 'user', 1, 1234
-							component_data 'user', 2, 1235
-							component_data 'system', 1, 3452
-							component_data 'system', 2, 3451
-						end)
-
-						message = req.recv
-						message.tag_set.should be_match('location:magi')
-						message.tag_set.should be_match('system:memory')
-						message.time_from.should be_utc
-						message.time_span.should be_a Float
-						message.component_data.should be_a Hash
-						message.component_data.should have_key('used')
-						message.component_data['used'][0][0].should == Time.at(1).utc
-						message.component_data['used'][0][1].should == 3452
-						message.component_data.should have_key('free')
-
-						req.more?.should be_true
-
-						message = req.recv
-						message.tag_set.should be_match('location:magi')
-						message.tag_set.should be_match('system:CPU usage')
-						message.time_from.should be_utc
-						message.time_span.should be_a Float
-						message.component_data.should be_a(Hash)
-						message.component_data.should have_key('user')
-						message.component_data['system'][0][0].should == Time.at(1).utc
-						message.component_data['system'][0][1].should == 3452
-						message.component_data.should have_key('system')
-					end
-				end
-			end
-		end
-
-		it 'should allow sending DataSetQuery and receinving multiple DataSet objects - with recv_all' do
-			ZeroMQ.new do |zmq|
-				zmq.rep_bind(test_address) do |rep|
-					zmq.req_connect(test_address) do |req|
-						req.send DataSetQuery.new('abc123', 'location:/magi\./, system:memory', Time.at(100), 100, 1)
-
-						message = rep.recv
-						message.should be_a DataSetQuery
-						message.query_id.should == 'abc123'
-						message.tag_expression.to_s.should == 'location:/magi\./, system:memory'
-						message.time_from.should == Time.at(100).utc
-						message.time_span.should == 100.0
-						message.granularity.should == 1.0
-
-						rep.send(DataSet.new('memory', 'location:magi, system:memory', Time.at(100), 100) do
-							component_data 'free', 1, 1234
-							component_data 'free', 2, 1235
-							component_data 'used', 1, 3452
-							component_data 'used', 2, 3451
-						end, more: true)
-
-						rep.send(DataSet.new('CPU usage', 'location:magi, system:CPU usage', Time.at(100), 100) do
-							component_data 'user', 1, 1234
-							component_data 'user', 2, 1235
-							component_data 'system', 1, 3452
-							component_data 'system', 2, 3451
-						end)
-
-						messages = req.recv_all
-						messages.should have(2).messages
-
-						message = messages.shift
-						message.tag_set.should be_match('location:magi')
-						message.tag_set.should be_match('system:memory')
-						message.time_from.should be_utc
-						message.time_span.should be_a Float
-						message.component_data.should be_a(Hash)
-						message.component_data.should have_key('used')
-						message.component_data['used'][0][0].should == Time.at(1).utc
-						message.component_data['used'][0][1].should == 3452
-						message.component_data.should have_key('free')
-
-						message = messages.shift
-						message.tag_set.should be_match('location:magi')
-						message.tag_set.should be_match('system:CPU usage')
-						message.time_from.should be_utc
-						message.time_span.should be_a Float
-						message.component_data.should be_a(Hash)
-						message.component_data.should have_key('user')
-						message.component_data['system'][0][0].should == Time.at(1).utc
-						message.component_data['system'][0][1].should == 3452
-						message.component_data.should have_key('system')
 					end
 				end
 			end

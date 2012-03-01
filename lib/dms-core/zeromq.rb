@@ -106,8 +106,7 @@ class ZeroMQ
 			ok? @socket.setsockopt(ZMQ::SUBSCRIBE, object.empty? ? '' : "#{object}/#{topic}")
 		end
 
-		def recv(*args)
-			expected_types = args
+		def recv(*expected_types)
 			str = ""
 			ok? @socket.recv_string(str)
 			message = DataType.from_message(Message.load(str))
@@ -117,6 +116,14 @@ class ZeroMQ
 
 		def more?
 			@socket.more_parts?
+		end
+
+		def recv_all(*expected_types)
+			out = []
+			begin
+				out << recv(*expected_types)
+			end while more?
+			out
 		end
 	end
 
@@ -139,12 +146,8 @@ class ZeroMQ
 			@receiver.more?
 		end
 
-		def recv_all
-			out = []
-			begin
-				out << recv
-			end while more?
-			out
+		def recv_all(*expected_types)
+			@receiver.recv_all(*expected_types)
 		end
 	end
 
