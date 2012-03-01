@@ -203,7 +203,7 @@ describe ZeroMQ do
 							component_data 'free', 2, 1235
 							component_data 'used', 1, 3452
 							component_data 'used', 2, 3451
-						end, sendmore: true)
+						end, more: true)
 
 						rep.send(DataSet.new('CPU usage', 'location:magi, system:CPU usage', Time.at(100), Time.at(0)) do
 							component_data 'user', 1, 1234
@@ -259,7 +259,7 @@ describe ZeroMQ do
 							component_data 'free', 2, 1235
 							component_data 'used', 1, 3452
 							component_data 'used', 2, 3451
-						end, sendmore: true)
+						end, more: true)
 
 						rep.send(DataSet.new('CPU usage', 'location:magi, system:CPU usage', Time.at(100), Time.at(0)) do
 							component_data 'user', 1, 1234

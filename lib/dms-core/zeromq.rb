@@ -70,28 +70,30 @@ class ZeroMQ
 	end
 
 	class Sender < Socket
-		def initialize(socket, hwm, swap, buffer, linger)
+		def initialize(socket, options = {})
 			@socket = socket
-			ok? @socket.setsockopt(ZMQ::HWM, hwm)
-			ok? @socket.setsockopt(ZMQ::SWAP, swap)
-			ok? @socket.setsockopt(ZMQ::SNDBUF, buffer)
-			ok? @socket.setsockopt(ZMQ::LINGER, (linger * 1000).to_i)
+
+			ok? @socket.setsockopt(ZMQ::HWM, options[:hwm] || 1000)
+			ok? @socket.setsockopt(ZMQ::SWAP, options[:swap] || 0)
+			ok? @socket.setsockopt(ZMQ::SNDBUF, options[:buffer] || 0)
+			ok? @socket.setsockopt(ZMQ::LINGER, ((options[:linger] || 10) * 1000).to_i)
 		end
 
 		def send(data_type, options = {})
 			topic = options[:topic] || nil
 			flags = 0
-			flags |= ZMQ::SNDMORE if options[:sendmore]
+			flags |= ZMQ::SNDMORE if options[:more]
 			ok? @socket.send_string(data_type.to_message(topic).to_s, flags)
 		end
 	end
 
 	class Receiver < Socket
-		def initialize(socket, hwm, swap, buffer)
+		def initialize(socket, options = {})
 			@socket = socket
-			ok? @socket.setsockopt(ZMQ::HWM, hwm)
-			ok? @socket.setsockopt(ZMQ::SWAP, swap)
-			ok? @socket.setsockopt(ZMQ::SNDBUF, buffer)
+
+			ok? @socket.setsockopt(ZMQ::HWM, options[:hwm] || 1000)
+			ok? @socket.setsockopt(ZMQ::SWAP, options[:swap] || 0)
+			ok? @socket.setsockopt(ZMQ::SNDBUF, options[:buffer] || 0)
 		end
 
 		def subscribe(object = '', topic = '')
@@ -110,10 +112,10 @@ class ZeroMQ
 	end
 
 	class SenderReceiver < Socket
-		def initialize(socket, hwm, swap, buffer, linger)
+		def initialize(socket, options = {})
 			@socket = socket
-			@sender = Sender.new(socket, hwm, swap, buffer, linger)
-			@receiver = Receiver.new(socket, hwm, swap, buffer)
+			@sender = Sender.new(socket, options)
+			@receiver = Receiver.new(socket, options)
 		end
 
 		def send(data_type, options = {})
@@ -179,93 +181,93 @@ class ZeroMQ
 		end
 	end
 
-	def connect_receiver(type, address, hwm, swap, buffer)
+	def connect_receiver(type, address, options = {})
 		have? socket = @context.socket(type)
 		begin
-			yield Receiver.new(socket, hwm, swap, buffer).connect(address)
+			yield Receiver.new(socket, options).connect(address)
 		ensure
 			ok? socket.close
 		end
 	end
 
-	def bind_receiver(type, address, hwm, swap, buffer)
+	def bind_receiver(type, address, options = {})
 		have? socket = @context.socket(type)
 		begin
-			yield Receiver.new(socket, hwm, swap, buffer).bind(address)
+			yield Receiver.new(socket, options).bind(address)
 		ensure
 			ok? socket.close
 		end
 	end
 
-	def connect_sender(type, address, hwm, swap, buffer, linger)
+	def connect_sender(type, address, options = {})
 		have? socket = @context.socket(type)
 		begin
-			yield Sender.new(socket, hwm, swap, buffer, linger).connect(address)
+			yield Sender.new(socket, options).connect(address)
 		ensure
 			ok? socket.close
 		end
 	end
 
-	def bind_sender(type, address, hwm, swap, buffer, linger)
+	def bind_sender(type, address, options = {})
 		have? socket = @context.socket(type)
 		begin
-			yield Sender.new(socket, hwm, swap, buffer, linger).bind(address)
+			yield Sender.new(socket, options).bind(address)
 		ensure
 			ok? socket.close
 		end
 	end
 
-	def connect_sender_receiver(type, address, hwm, swap, buffer, linger)
+	def connect_sender_receiver(type, address, options = {})
 		have? socket = @context.socket(type)
 		begin
-			yield SenderReceiver.new(socket, hwm, swap, buffer, linger).connect(address)
+			yield SenderReceiver.new(socket, options).connect(address)
 		ensure
 			ok? socket.close
 		end
 	end
 
-	def bind_sender_receiver(type, address, hwm, swap, buffer, linger)
+	def bind_sender_receiver(type, address, options = {})
 		have? socket = @context.socket(type)
 		begin
-			yield SenderReceiver.new(socket, hwm, swap, buffer, linger).bind(address)
+			yield SenderReceiver.new(socket, options).bind(address)
 		ensure
 			ok? socket.close
 		end
 	end
 
 	# PUSH/PULL
-	def pull_bind(address, hwm = 1000, swap = 0, buffer = 0, &block)
-		bind_receiver(ZMQ::PULL, address, hwm, swap, buffer, &block)
+	def pull_bind(address, options = {}, &block)
+		bind_receiver(ZMQ::PULL, address, options, &block)
 	end
 
-	def push_connect(address, hwm = 1000, swap = 0, buffer = 0, linger = 10, &block)
-		connect_sender(ZMQ::PUSH, address, hwm, swap, buffer, linger, &block)
+	def push_connect(address, options = {}, &block)
+		connect_sender(ZMQ::PUSH, address, options, &block)
 	end
 
 	# REQ/REP
-	def rep_bind(address, hwm = 1000, swap = 0, buffer = 0, linger = 10, &block)
-		bind_sender_receiver(ZMQ::REP, address, hwm, swap, buffer, linger, &block)
+	def rep_bind(address, options = {}, &block)
+		bind_sender_receiver(ZMQ::REP, address, options, &block)
 	end
 
-	def req_connect(address, hwm = 1000, swap = 0, buffer = 0, linger = 10, &block)
-		connect_sender_receiver(ZMQ::REQ, address, hwm, swap, buffer, linger, &block)
+	def req_connect(address, options = {}, &block)
+		connect_sender_receiver(ZMQ::REQ, address, options, &block)
 	end
 
 	# PUB/SUB
-	def pub_bind(address, hwm = 1000, swap = 0, buffer = 0, linger = 10, &block)
-		bind_sender(ZMQ::PUB, address, hwm, swap, buffer, linger, &block)
+	def pub_bind(address, options = {}, &block)
+		bind_sender(ZMQ::PUB, address, options, &block)
 	end
 
-	def pub_connect(address, hwm = 1000, swap = 0, buffer = 0, linger = 10, &block)
-		connect_sender(ZMQ::PUB, address, hwm, swap, buffer, linger, &block)
+	def pub_connect(address, options = {}, &block)
+		connect_sender(ZMQ::PUB, address, options, &block)
 	end
 
-	def sub_bind(address, hwm = 1000, swap = 0, buffer = 0, &block)
-		bind_receiver(ZMQ::SUB, address, hwm, swap, buffer, &block)
+	def sub_bind(address, options = {}, &block)
+		bind_receiver(ZMQ::SUB, address, options, &block)
 	end
 
-	def sub_connect(address, hwm = 1000, swap = 0, buffer = 0, &block)
-		connect_receiver(ZMQ::SUB, address, hwm, swap, buffer, &block)
+	def sub_connect(address, options = {}, &block)
+		connect_receiver(ZMQ::SUB, address, options, &block)
 	end
 end
 
