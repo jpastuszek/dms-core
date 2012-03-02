@@ -18,6 +18,48 @@
 require 'logging'
 
 Logging.logger.root.appenders = Logging.appenders.stderr(:layout => Logging::Layouts::Pattern.new)
+
+# monkey patch to support exception and object logging
+class Logging::Logger
+	class << self
+		def define_log_methods( logger )
+			::Logging::LEVELS.each do |name,num|
+				code = "undef :#{name} if method_defined? :#{name}\n"
+				code << "undef :#{name}? if method_defined? :#{name}?\n"
+
+				if logger.level > num
+					code << <<-CODE
+						def #{name}?( ) false end
+						def #{name}( data = nil, *objects ) false end
+CODE
+				else
+					code << <<-CODE
+						def #{name}?( ) true end
+						def #{name}( data = nil, *objects )
+							unless objects.empty?
+								data << ': '
+								data << objects.map do |obj|
+									if obj.is_a? Exception
+										"\#{obj.class.name}: \#{obj.message}\n\#{obj.backtrace.join("\n")}"
+									else
+										obj.to_s
+									end
+								end.join(', ')
+							end
+							data = yield if block_given?
+							log_event(::Logging::LogEvent.new(@name, #{num}, data, @trace))
+							true
+						end
+CODE
+				end
+
+				logger._meta_eval(code, __FILE__, __LINE__)
+			end
+			logger
+		end
+	end
+end
+
 Logging.logger.root.level = :info
 
 module Kernel

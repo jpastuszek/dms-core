@@ -2,7 +2,7 @@ source "http://rubygems.org"
 
 gem "msgpack", "~> 0.4.6"
 gem "ffi-rzmq", "~> 0.9.3"
-gem "logging", "~> 1.6.2"
+gem "logging", "~> 1.7.0"
 
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.

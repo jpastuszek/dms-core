@@ -8,8 +8,7 @@
 # (at your option) any later version.
 #
 # Distributed Monitoring System is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# but WITHOUT ANY WARRANTY; without even the implied warranty of # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -82,6 +81,37 @@ describe 'Kernel#log' do
 		end
 
 		out.should include("TestA[hello world]")
+	end
+
+	it 'should log exceptions with back trace on different log levels' do
+		begin
+			raise 'test'
+		rescue => error
+			out = Capture.stderr do
+				log.warn 'hello world', error
+			end
+			out.should include('hello world: RuntimeError: test')
+			out.should include('logger_spec.rb:')
+
+			out = Capture.stderr do
+				log.error 'hello world', error
+			end
+			out.should include('hello world: RuntimeError: test')
+			out.should include('logger_spec.rb:')
+
+			out = Capture.stderr do
+				log.fatal 'hello world', error
+			end
+			out.should include('hello world: RuntimeError: test')
+			out.should include('logger_spec.rb:')
+		end
+	end
+
+	it 'should log objects when given as additional parameter to log method' do
+		out = Capture.stderr do
+			log.fatal 'hello world', [:a, 1]
+		end
+		out.should include('world: [:a, 1]')
 	end
 end
 
