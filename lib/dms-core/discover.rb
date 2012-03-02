@@ -15,9 +15,39 @@
 # You should have received a copy of the GNU General Public License
 # along with Distributed Monitoring System.  If not, see <http://www.gnu.org/licenses/>.
 
-require 'dms-core/raw_data_point'
-require 'dms-core/data_set'
-require 'dms-core/data_set_query'
-require 'dms-core/no_results'
-require 'dms-core/discover'
+require 'dms-core/data_type'
+
+class Discover < DataType
+	attr_reader :host_name
+	attr_reader :program
+
+	def initialize(host_name = '', program = '')
+		@host_name = host_name.to_s
+		if @host_name[0] == '/' and @host_name[-1] == '/'
+			@host_name = Regexp.new(@host_name.slice(1...-1), Regexp::EXTENDED | Regexp::IGNORECASE)
+		end
+
+		@program = program.to_s
+	end
+
+	def self.from_message(message)
+		self.new(
+			message[:host_name],
+			message[:program], 
+		)
+	end
+
+	def to_message(topic = '')
+		Message.new(self.class.name, topic, 0) do |body|
+			body[:host_name] = @host_name.is_a?(Regexp) ? @host_name.inspect.scan(/\/.*\//).first : @host_name
+			body[:program] = @program
+		end
+	end
+
+	def to_s
+		"Discover[#{@host_name}/#{@program}]"
+	end
+
+	register(self)
+end
 
