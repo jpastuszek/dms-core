@@ -38,6 +38,18 @@ describe ZeroMQ do
 		ZeroMQ.binding_version.should match(/\d+\.\d+\.\d+/)
 	end
 
+	it 'should allow sending and receiving raw string messages' do
+		ZeroMQ.new do |zmq|
+			zmq.pull_bind(test_address) do |pull|
+				zmq.push_connect(test_address) do |push|
+					push.send_raw 'hello world'
+				end
+
+				pull.recv_raw.should == 'hello world'
+			end
+		end
+	end
+
 	describe 'sending' do
 		it '#send should allow sending multiple objects' do
 			ZeroMQ.new do |zmq|

@@ -81,9 +81,13 @@ class ZeroMQ
 
 		def send(data_type, options = {})
 			topic = options[:topic] || nil
+			send_raw(data_type.to_message(topic).to_s, options)
+		end
+
+		def send_raw(string, options = {})
 			flags = 0
 			flags |= ZMQ::SNDMORE if options[:more]
-			ok? @socket.send_string(data_type.to_message(topic).to_s, flags)
+			ok? @socket.send_string(string, flags)
 		end
 	end
 
@@ -107,11 +111,15 @@ class ZeroMQ
 		end
 
 		def recv(*expected_types)
-			str = ""
-			ok? @socket.recv_string(str)
-			message = DataType.from_message(Message.load(str))
+			message = DataType.from_message(Message.load(recv_raw))
 			expected_types.any?{|et| message.is_a? et} or raise UnexpectedMessageType.new(expected_types, message) unless expected_types.empty?
 			message
+		end
+
+		def recv_raw
+			string = ""
+			ok? @socket.recv_string(string)
+			string
 		end
 
 		def more?
@@ -138,8 +146,16 @@ class ZeroMQ
 			@sender.send(data_type, options)
 		end
 
+		def send_raw(string, options)
+			@sender.send_raw(string, options)
+		end
+
 		def recv(*expected_types)
 			@receiver.recv(*expected_types)
+		end
+
+		def recv_raw
+			@receiver.recv_raw
 		end
 
 		def more?
