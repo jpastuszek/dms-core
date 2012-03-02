@@ -55,8 +55,8 @@ class ModuleLoader
 		log.info "loading module '#{module_name}' from: #{module_file}"
 		begin
 			return @module_class.load(module_name, module_file.read)
-		rescue => e
-			log.error "error while loading module '#{module_name}': #{e.class.name}: #{e.message}"
+		rescue => error
+			log.error "error while loading module '#{module_name}'", error
 			return nil
 		end
 	end
