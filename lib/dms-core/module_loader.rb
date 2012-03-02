@@ -26,12 +26,6 @@ class ModuleBase
 	end
 
 	attr_reader :name
-
-	def self.load(name, string)
-		self.new(name) do
-			eval string
-		end
-	end
 end
 
 class ModuleLoader
@@ -54,7 +48,9 @@ class ModuleLoader
 		module_name = module_file.basename(module_file.extname).to_s
 		log.info "loading module '#{module_name}' from: #{module_file}"
 		begin
-			return @module_class.load(module_name, module_file.read)
+			return @module_class.new(module_name) do
+				eval module_file.read, binding, module_file.to_s
+			end
 		rescue => error
 			log.error "error while loading module '#{module_name}'", error
 			return nil

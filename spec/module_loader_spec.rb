@@ -39,10 +39,6 @@ describe ModuleBase do
 				abc 'xyz'
 			end.abc.should == 'xyz'
 		end
-
-		it 'should load DSL provided as a string' do
-			subject.load('test module', 'abc "xyz"').abc.should == 'xyz'
-		end
 	end
 end
 
