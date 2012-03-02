@@ -20,4 +20,5 @@ require 'dms-core/data_set'
 require 'dms-core/data_set_query'
 require 'dms-core/no_results'
 require 'dms-core/discover'
+require 'dms-core/hello'
 
