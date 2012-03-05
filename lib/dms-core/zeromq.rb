@@ -116,27 +116,69 @@ class ZeroMQ
 			end
 		end
 
-		class UnexpectedMessageType < IOError
-			def initialize(expected, message)
-				super "received message of type: #{message.class.name}, expected #{expected.join(' or ')}"
+		class Puller < Receiver
+			def initialize(context, options = {})
+				have? socket = context.socket(ZMQ::PULL)
+				begin
+					super socket, options
+					yield self
+				ensure
+					ok? socket.close
+				end
 			end
 		end
 
 		def initialize(socket, options = {})
 			@socket = socket
 			@data_type_callbacks = {}
+			@raw_callbacks = []
+			@any_callbacks = []
 
 			ok? @socket.setsockopt(ZMQ::HWM, options[:hwm] || 1000)
 			ok? @socket.setsockopt(ZMQ::SWAP, options[:swap] || 0)
 			ok? @socket.setsockopt(ZMQ::SNDBUF, options[:buffer] || 0)
 		end
 
-		# TODO: get rid for each
-		def recv(*expected_types)
-			message = DataType.from_message(Message.load(recv_raw))
-			expected_types.any?{|et| message.is_a? et} or raise UnexpectedMessageType.new(expected_types, message) unless expected_types.empty?
-			message
+		def on_raw(&callback)
+			@raw_callbacks << callback
+			self
 		end
+
+		def on(data_type, &callback)
+			(@data_type_callbacks[data_type] ||= []) << callback
+			self
+		end
+
+		def on_any(&callback)
+			@any_callbacks << callback
+			self
+		end
+
+		def receive!
+			begin
+				raw_message = recv_raw
+				@raw_callbacks.each do |callback|
+					callback.call(raw_message)
+				end
+
+				unless @data_type_callbacks.empty? and @any_callbacks.empty?
+					message = Message.load(raw_message)
+					data_type = DataType.from_message(message)
+
+					if callbacks = @data_type_callbacks[data_type.class]
+						callbacks.each do |callback|
+							callback.call(data_type, message.topic)
+						end
+					end
+
+					@any_callbacks.each do |callback|
+						callback.call(data_type, message.topic)
+					end
+				end
+			end while more?
+		end
+
+		private
 
 		def recv_raw
 			string = ""
@@ -144,43 +186,8 @@ class ZeroMQ
 			string
 		end
 
-		# TODO: get rid
-		def recv_all(*expected_types)
-			out = []
-			begin
-				out << recv(*expected_types)
-			end while more?
-			out
-		end
-
-		def each
-			begin
-				yield recv
-			end while more?
-		end
-
 		def more?
 			@socket.more_parts?
-		end
-
-		def on(data_type, &callback)
-			@data_type_callbacks[data_type] = callback
-		end
-
-		def receive!
-			begin
-				message, topic = recv_with_topic
-				if callback = @data_type_callbacks[message.class]
-					callback.call(message, topic)
-				end
-			end while more?
-		end
-
-		private
-
-		def recv_with_topic
-			message = Message.load(recv_raw)
-			[DataType.from_message(message), message.topic]
 		end
 	end
 
@@ -210,12 +217,18 @@ class ZeroMQ
 				have? socket = context.socket(ZMQ::REQ)
 				begin
 					super socket, options
+
+					@response_callback = nil
+
+					@receiver.on_any do |message|
+						@response_callback.call(message) if @response_callback
+						@response_callback = nil
+					end
+
 					yield self
 				ensure
 					ok? socket.close
 				end
-
-				@response_callback = nil
 			end
 
 			def send(data_type, options = {}, &callback)
@@ -224,9 +237,7 @@ class ZeroMQ
 			end
 
 			def receive!
-				@receiver.each do |message|
-					@response_callback.call(message)
-				end
+				@receiver.receive!
 			end
 		end
 
@@ -329,7 +340,10 @@ class ZeroMQ
 
 	# PUSH/PULL
 	def pull_bind(address, options = {}, &block)
-		bind_receiver(ZMQ::PULL, address, options, &block)
+		Receiver::Puller.new(@context, options) do |pull|
+			pull.bind(address)
+			yield pull
+		end
 	end
 
 	def push_connect(address, options = {}, &block)
