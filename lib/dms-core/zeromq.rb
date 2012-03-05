@@ -275,6 +275,7 @@ class ZeroMQ
 
 		def send(data_type, options = {}, &callback)
 			@sender.send(data_type, options)
+			self
 		end
 	end
 
