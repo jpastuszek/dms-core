@@ -19,11 +19,7 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe DataSetQuery do
 	subject do
-		DataSetQuery.new('abc123', 'location:/magi\./, system:memory', Time.at(100), 100, 1)
-	end
-
-	it 'takes query id' do
-		subject.query_id.should == 'abc123'
+		DataSetQuery.new('location:/magi\./, system:memory', Time.at(100), 100, 1)
 	end
 
 	it 'takes tag expression' do
@@ -47,7 +43,6 @@ describe DataSetQuery do
 		m.data_type.should == 'DataSetQuery'
 		m.topic.should == ''
 
-		m[:query_id].should == 'abc123'
 		m[:tag_expression].should == 'location:/magi\./, system:memory'
 		m[:time_from].should == 100
 		m[:time_span].should == 100.0
@@ -75,7 +70,7 @@ describe DataSetQuery do
 	end
 
 	it '#to_s gives nice printout' do
-		subject.to_s.should == 'DataSetQuery[abc123][location:/magi\\./, system:memory]<1970-01-01 00:01:40.000,100.0>@1.0'
+		subject.to_s.should == 'DataSetQuery[location:/magi\\./, system:memory]<1970-01-01 00:01:40.000,100.0>@1.0'
 	end
 end
 

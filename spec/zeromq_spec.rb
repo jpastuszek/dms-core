@@ -333,11 +333,10 @@ describe ZeroMQ do
 			ZeroMQ.new do |zmq|
 				zmq.rep_bind(test_address) do |rep|
 					zmq.req_connect(test_address) do |req|
-						req.send DataSetQuery.new('abc123', 'location:/magi\./, system:memory', Time.at(100), 100, 1)
+						req.send DataSetQuery.new('location:/magi\./, system:memory', Time.at(100), 100, 1)
 
 						message = rep.recv
 						message.should be_a DataSetQuery
-						message.query_id.should == 'abc123'
 						message.tag_expression.to_s.should == 'location:/magi\./, system:memory'
 						message.time_from.should == Time.at(100).utc
 						message.time_span.should == 100.0
