@@ -366,15 +366,13 @@ describe ZeroMQ do
 	end
 
 	describe ZeroMQ::Poller do
-		it 'should support polling for readable sockets' do
+		it 'should support polling for readable sockets with on handler' do
 			messages = []
 
 			ZeroMQ.new do |zmq|
 				zmq.pull_bind(test_address) do |pull1|
 					zmq.pull_bind(test_address2) do |pull2|
 						poller = ZeroMQ::Poller.new
-						poller.register(pull1)
-						poller.register(pull2)
 
 						zmq.push_connect(test_address) do |push1|
 							push1.send test_raw_data_point
@@ -383,15 +381,16 @@ describe ZeroMQ do
 							push2.send test_raw_data_point2
 						end
 
-						begin
-							poller.poll(4) do |readables, writables|
-								readables.should_not be_empty
-								writables.should be_empty
+						poller.on(pull1) do |pull|
+							messages << pull.recv
+						end
 
-								readables.each do |receiver|
-									messages << receiver.recv
-								end
-							end.should be_true
+						poller.on(pull2) do |pull|
+							messages << pull.recv
+						end
+
+						begin
+							poller.poll(4)
 						end while messages.length < 2
 					end
 				end

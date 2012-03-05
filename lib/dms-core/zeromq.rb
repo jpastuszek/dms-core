@@ -180,10 +180,11 @@ class ZeroMQ
 
 		def initialize
 			@sockets = {}
+			@callbacks = {}
 			@poller = ZMQ::Poller.new
 		end
 
-		def register(object)
+		def on(object, &callback)
 			case object
 			when Sender
 				@poller.register_writable(object.socket)
@@ -196,6 +197,7 @@ class ZeroMQ
 			end
 
 			@sockets[object.socket] = object
+			(@callbacks[object.socket] ||= []) << callback
 		end
 
 		def poll(timeout = :blocking)
@@ -203,8 +205,15 @@ class ZeroMQ
 			ok? @poller.poll(timeout)
 			return false if @poller.readables.empty? and @poller.writables.empty?
 
-			yield @poller.readables.map{|socket| @sockets[socket]}, @poller.writables.map{|socket| @sockets[socket]}
-			return true
+			(@poller.writables + @poller.readables).each do |socket|
+				@callbacks[socket].each do |callback|
+					callback.call(@sockets[socket])
+				end
+			end
+		end
+
+		def poll!
+			loop{poll}
 		end
 	end
 
