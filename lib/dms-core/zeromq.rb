@@ -73,6 +73,30 @@ class ZeroMQ
 	end
 
 	class Sender < Socket
+		class Publisher < Sender
+			def initialize(context, options = {})
+				have? socket = context.socket(ZMQ::PUB)
+				begin
+					super socket, options
+					yield self
+				ensure
+					ok? socket.close
+				end
+			end
+		end
+
+		class Pusher < Sender
+			def initialize(context, options = {})
+				have? socket = context.socket(ZMQ::PUSH)
+				begin
+					super socket, options
+					yield self
+				ensure
+					ok? socket.close
+				end
+			end
+		end
+
 		def initialize(socket, options = {})
 			@socket = socket
 
@@ -106,13 +130,15 @@ class ZeroMQ
 				end
 			end
 
-			def subscribe(object = nil, topic = '')
-				ok? @socket.setsockopt(ZMQ::SUBSCRIBE, ! object ? '' : "#{object}/#{topic.empty? ? '' : topic + "\n"}")
-			end
-
 			def on(data_type, topic = '', &callback)
 				subscribe(data_type, topic)
 				super data_type, &callback
+			end
+
+			private
+
+			def subscribe(object = nil, topic = '')
+				ok? @socket.setsockopt(ZMQ::SUBSCRIBE, ! object ? '' : "#{object}/#{topic.empty? ? '' : topic + "\n"}")
 			end
 		end
 
@@ -132,7 +158,7 @@ class ZeroMQ
 			@socket = socket
 			@data_type_callbacks = {}
 			@raw_callbacks = []
-			@any_callbacks = []
+			@othre_callbacks = []
 
 			ok? @socket.setsockopt(ZMQ::HWM, options[:hwm] || 1000)
 			ok? @socket.setsockopt(ZMQ::SWAP, options[:swap] || 0)
@@ -149,8 +175,8 @@ class ZeroMQ
 			self
 		end
 
-		def on_any(&callback)
-			@any_callbacks << callback
+		def on_other(&callback)
+			@othre_callbacks << callback
 			self
 		end
 
@@ -161,7 +187,7 @@ class ZeroMQ
 					callback.call(raw_message)
 				end
 
-				unless @data_type_callbacks.empty? and @any_callbacks.empty?
+				unless @data_type_callbacks.empty? and @othre_callbacks.empty?
 					message = Message.load(raw_message)
 					data_type = DataType.from_message(message)
 
@@ -169,10 +195,10 @@ class ZeroMQ
 						callbacks.each do |callback|
 							callback.call(data_type, message.topic)
 						end
-					end
-
-					@any_callbacks.each do |callback|
-						callback.call(data_type, message.topic)
+					else
+						@othre_callbacks.each do |callback|
+							callback.call(data_type, message.topic)
+						end
 					end
 				end
 			end while more?
@@ -220,7 +246,7 @@ class ZeroMQ
 
 					@response_callback = nil
 
-					@receiver.on_any do |message|
+					@receiver.on_other do |message|
 						@response_callback.call(message) if @response_callback
 						@response_callback = nil
 					end
@@ -302,42 +328,6 @@ class ZeroMQ
 		end
 	end
 
-	def connect_receiver(type, address, options = {})
-		have? socket = @context.socket(type)
-		begin
-			yield Receiver.new(socket, options).connect(address)
-		ensure
-			ok? socket.close
-		end
-	end
-
-	def bind_receiver(type, address, options = {})
-		have? socket = @context.socket(type)
-		begin
-			yield Receiver.new(socket, options).bind(address)
-		ensure
-			ok? socket.close
-		end
-	end
-
-	def connect_sender(type, address, options = {})
-		have? socket = @context.socket(type)
-		begin
-			yield Sender.new(socket, options).connect(address)
-		ensure
-			ok? socket.close
-		end
-	end
-
-	def bind_sender(type, address, options = {})
-		have? socket = @context.socket(type)
-		begin
-			yield Sender.new(socket, options).bind(address)
-		ensure
-			ok? socket.close
-		end
-	end
-
 	# PUSH/PULL
 	def pull_bind(address, options = {}, &block)
 		Receiver::Puller.new(@context, options) do |pull|
@@ -347,7 +337,10 @@ class ZeroMQ
 	end
 
 	def push_connect(address, options = {}, &block)
-		connect_sender(ZMQ::PUSH, address, options, &block)
+		Sender::Pusher.new(@context, options) do |push|
+			push.connect(address)
+			yield push
+		end
 	end
 
 	# REQ/REP
@@ -367,11 +360,17 @@ class ZeroMQ
 
 	# PUB/SUB
 	def pub_bind(address, options = {}, &block)
-		bind_sender(ZMQ::PUB, address, options, &block)
+		Sender::Publisher.new(@context, options) do |pub|
+			pub.bind(address)
+			yield pub
+		end
 	end
 
 	def pub_connect(address, options = {}, &block)
-		connect_sender(ZMQ::PUB, address, options, &block)
+		Sender::Publisher.new(@context, options) do |pub|
+			pub.connect(address)
+			yield pub
+		end
 	end
 
 	def sub_bind(address, options = {})
