@@ -116,6 +116,11 @@ class ZeroMQ
 			message
 		end
 
+		def recv_with_topic
+			message = Message.load(recv_raw)
+			[DataType.from_message(message), message.topic]
+		end
+
 		def recv_raw
 			string = ""
 			ok? @socket.recv_string(string)

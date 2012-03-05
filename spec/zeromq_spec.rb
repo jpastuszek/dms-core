@@ -293,17 +293,17 @@ describe ZeroMQ do
 						pub.send test_raw_data_point, topic: 'hello world'
 					end
 
-					message = sub.recv
+					message, topic = sub.recv_with_topic
+
+					message.should be_a RawDataPoint
+					message.path.should == 'system/memory'
+					message.component.should == 'cache'
+					message.time_stamp.should == Time.at(2.5).utc
+					message.value.should == 123
+
+					topic.should == 'hello world'
 				end
 			end
-
-			message.should be_a RawDataPoint
-			message.path.should == 'system/memory'
-			message.component.should == 'cache'
-			message.time_stamp.should == Time.at(2.5).utc
-			message.value.should == 123
-
-			message = nil
 
 			ZeroMQ.new do |zmq|
 				zmq.sub_bind(test_address) do |sub|
@@ -314,15 +314,17 @@ describe ZeroMQ do
 						pub.send test_raw_data_point, topic: 'hello'
 					end
 
-					message = sub.recv
+					message, topic = sub.recv_with_topic
+
+					message.should be_a RawDataPoint
+					message.path.should == 'system/memory'
+					message.component.should == 'cache'
+					message.time_stamp.should == Time.at(2.5).utc
+					message.value.should == 123
+
+					topic = 'hello'
 				end
 			end
-
-			message.should be_a RawDataPoint
-			message.path.should == 'system/memory'
-			message.component.should == 'cache'
-			message.time_stamp.should == Time.at(2.5).utc
-			message.value.should == 123
 		end
 	end
 
