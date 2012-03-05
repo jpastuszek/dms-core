@@ -430,39 +430,88 @@ describe ZeroMQ do
 	end
 
 	describe 'REQ and REP' do
-		it 'should allow sending DataSetQuery and receinving DataSet object' do
+		it 'should allow sending requests and receinving response objects' do
+			messages = []
+
 			ZeroMQ.new do |zmq|
 				zmq.rep_bind(test_address) do |rep|
+					rep.on Discover do |discover|
+						rep.send Hello.new(discover.host_name, 'abc', 123)
+					end
+
 					zmq.req_connect(test_address) do |req|
-						req.send DataSetQuery.new('location:/magi\./, system:memory', Time.at(100), 100, 1)
+						req.send Discover.new('abc') do |response|
+							messages << response
+						end
 
-						message = rep.recv
-						message.should be_a DataSetQuery
-						message.tag_expression.to_s.should == 'location:/magi\./, system:memory'
-						message.time_from.should == Time.at(100).utc
-						message.time_span.should == 100.0
-						message.granularity.should == 1.0
-
-						rep.send(DataSet.new('memory', 'location:magi, system:memory', Time.at(100), 100) do
-							component_data 'free', 1, 1234
-							component_data 'free', 2, 1235
-							component_data 'used', 1, 3452
-							component_data 'used', 2, 3451
-						end)
-
-						message = req.recv
-						message.tag_set.should be_match('location:magi')
-						message.tag_set.should be_match('system:memory')
-						message.time_from.should be_utc
-						message.time_span.should be_a Float
-						message.component_data.should be_a Hash
-						message.component_data.should have_key('used')
-						message.component_data['used'][0][0].should == Time.at(1).utc
-						message.component_data['used'][0][1].should == 3452
-						message.component_data.should have_key('free')
+						rep.receive!
+						req.receive!
 					end
 				end
 			end
+
+			messages.should have(1).messages
+
+			message = messages.shift
+			message.host_name.should == 'abc'
+			message.program.should == 'abc'
+			message.pid.should == 123
+		end
+
+		it 'should support polling' do
+			messages = []
+
+			ZeroMQ.new do |zmq|
+				poller = ZeroMQ::Poller.new
+
+				zmq.rep_bind(test_address) do |rep|
+					rep.on Discover do |discover|
+						rep.send Hello.new(discover.host_name, 'abc', 123)
+					end
+
+					poller << rep
+
+					zmq.rep_bind(test_address2) do |rep|
+						rep.on Discover do |discover|
+							rep.send Hello.new(discover.host_name, 'xyz', 321), topic: 'test'
+						end
+
+						poller << rep
+
+						zmq.req_connect(test_address) do |req|
+							req.send Discover.new('abc') do |response|
+								messages << response
+							end
+
+							poller << req
+
+							zmq.req_connect(test_address2) do |req|
+								req.send Discover.new('xyz') do |response|
+									messages << response
+								end
+
+								poller << req
+
+								begin
+									poller.poll(4)
+								end while messages.length < 2
+							end
+						end
+					end
+				end
+			end
+
+			messages.should have(2).messages
+
+			message = messages.shift
+			message.host_name.should == 'abc'
+			message.program.should == 'abc'
+			message.pid.should == 123
+
+			message = messages.shift
+			message.host_name.should == 'xyz'
+			message.program.should == 'xyz'
+			message.pid.should == 321
 		end
 	end
 end
