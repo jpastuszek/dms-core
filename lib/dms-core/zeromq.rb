@@ -187,6 +187,14 @@ class ZeroMQ
 		def recv_all(*expected_types)
 			@receiver.recv_all(*expected_types)
 		end
+
+		def on(data_type, &callback)
+			@receiver.on(data_type, &callback)
+		end
+
+		def receive!
+			@receiver.receive!
+		end
 	end
 
 	class Poller
