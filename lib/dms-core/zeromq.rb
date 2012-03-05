@@ -103,6 +103,7 @@ class ZeroMQ
 
 		def initialize(socket, options = {})
 			@socket = socket
+			@data_type_callbacks = {}
 
 			ok? @socket.setsockopt(ZMQ::HWM, options[:hwm] || 1000)
 			ok? @socket.setsockopt(ZMQ::SWAP, options[:swap] || 0)
@@ -140,6 +141,19 @@ class ZeroMQ
 				out << recv(*expected_types)
 			end while more?
 			out
+		end
+
+		def on(data_type, &callback)
+			@data_type_callbacks[data_type] = callback
+		end
+
+		def receive!
+			begin
+				message, topic = recv_with_topic
+				if callback = @data_type_callbacks[message.class]
+					callback.call(message, topic)
+				end
+			end while more?
 		end
 	end
 
@@ -197,7 +211,14 @@ class ZeroMQ
 			end
 
 			@sockets[object.socket] = object
-			(@callbacks[object.socket] ||= []) << callback
+			@callbacks[object.socket] = callback
+		end
+
+		def on_message(receiver, data_type, &callback)
+			receiver.on(data_type, &callback)
+			on(receiver) do
+				receiver.receive!
+			end
 		end
 
 		def poll(timeout = :blocking)
@@ -206,9 +227,7 @@ class ZeroMQ
 			return false if @poller.readables.empty? and @poller.writables.empty?
 
 			(@poller.writables + @poller.readables).each do |socket|
-				@callbacks[socket].each do |callback|
-					callback.call(@sockets[socket])
-				end
+				@callbacks[socket].call(@sockets[socket])
 			end
 		end
 

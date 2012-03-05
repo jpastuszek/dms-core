@@ -412,6 +412,54 @@ describe ZeroMQ do
 			message.time_stamp.should == Time.at(2.5).utc
 			message.value.should == 123
 		end
+
+		it 'should support polling for given data types' do
+			messages = []
+
+			ZeroMQ.new do |zmq|
+				zmq.pull_bind(test_address) do |pull1|
+					zmq.pull_bind(test_address2) do |pull2|
+						poller = ZeroMQ::Poller.new
+
+						zmq.push_connect(test_address) do |push1|
+							push1.send test_raw_data_point
+						end
+						zmq.push_connect(test_address2) do |push2|
+							push2.send test_raw_data_point2, topic: 'test'
+						end
+
+						poller.on_message(pull1, RawDataPoint) do |raw_data_point|
+							messages << raw_data_point
+						end
+
+						poller.on_message(pull2, RawDataPoint) do |raw_data_point, topic|
+							messages << raw_data_point
+							topic.should == 'test'
+						end
+
+						begin
+							poller.poll(4)
+						end while messages.length < 2
+					end
+				end
+			end
+
+			messages.should have(2).messages
+
+			message = messages.shift
+			message.should be_a RawDataPoint
+			message.path.should == 'system/memory'
+			message.component.should == 'cache'
+			message.time_stamp.should == Time.at(2.5).utc
+			message.value.should == 123
+
+			message = messages.shift
+			message.should be_a RawDataPoint
+			message.path.should == 'system/CPU usage'
+			message.component.should == 'user'
+			message.time_stamp.should == Time.at(2.5).utc
+			message.value.should == 123
+		end
 	end
 end
 
