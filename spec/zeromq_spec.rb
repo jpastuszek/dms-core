@@ -302,6 +302,27 @@ describe ZeroMQ do
 			message.component.should == 'cache'
 			message.time_stamp.should == Time.at(2.5).utc
 			message.value.should == 123
+
+			message = nil
+
+			ZeroMQ.new do |zmq|
+				zmq.sub_bind(test_address) do |sub|
+					sub.subscribe('RawDataPoint', 'hello')
+
+					zmq.pub_connect(test_address) do |pub|
+						pub.send test_raw_data_point2, topic: 'hello world'
+						pub.send test_raw_data_point, topic: 'hello'
+					end
+
+					message = sub.recv
+				end
+			end
+
+			message.should be_a RawDataPoint
+			message.path.should == 'system/memory'
+			message.component.should == 'cache'
+			message.time_stamp.should == Time.at(2.5).utc
+			message.value.should == 123
 		end
 	end
 
