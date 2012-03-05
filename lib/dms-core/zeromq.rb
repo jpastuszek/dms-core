@@ -36,7 +36,10 @@ module ZeroMQError
 
 	def ok?(rc)
 		have?(rc)
-		raise OperationFailedError unless ZMQ::Util.resultcode_ok?(rc)
+		unless ZMQ::Util.resultcode_ok?(rc)
+			raise Interrupt if ZMQ::Util.errno == Errno::EINTR::Errno
+			raise OperationFailedError 
+		end
 		rc
 	end
 end
@@ -210,7 +213,12 @@ class ZeroMQ
 		begin
 			yield self
 		ensure
-			ok? @context.terminate
+			begin
+				ok? @context.terminate
+			rescue Interrupt
+				retry
+			rescue
+			end
 		end
 	end
 
