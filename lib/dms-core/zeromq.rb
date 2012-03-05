@@ -106,8 +106,8 @@ class ZeroMQ
 			ok? @socket.setsockopt(ZMQ::SNDBUF, options[:buffer] || 0)
 		end
 
-		def subscribe(object = '', topic = '')
-			ok? @socket.setsockopt(ZMQ::SUBSCRIBE, object.empty? ? '' : "#{object}/#{topic.empty? ? '' : topic + "\n"}")
+		def subscribe(object = nil, topic = '')
+			ok? @socket.setsockopt(ZMQ::SUBSCRIBE, ! object ? '' : "#{object}/#{topic.empty? ? '' : topic + "\n"}")
 		end
 
 		def recv(*expected_types)

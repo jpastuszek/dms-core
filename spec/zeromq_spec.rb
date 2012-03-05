@@ -242,7 +242,7 @@ describe ZeroMQ do
 
 			ZeroMQ.new do |zmq|
 				zmq.sub_bind(test_address) do |sub|
-					sub.subscribe('RawDataPoint')
+					sub.subscribe(RawDataPoint)
 
 					zmq.pub_connect(test_address) do |pub|
 						pub.send test_raw_data_point
@@ -265,7 +265,7 @@ describe ZeroMQ do
 			ZeroMQ.new do |zmq|
 				zmq.pub_bind(test_address) do |pub|
 					zmq.sub_connect(test_address) do |sub|
-						sub.subscribe('RawDataPoint')
+						sub.subscribe(RawDataPoint)
 
 						keep_trying do
 							pub.send test_raw_data_point
@@ -287,7 +287,7 @@ describe ZeroMQ do
 
 			ZeroMQ.new do |zmq|
 				zmq.sub_bind(test_address) do |sub|
-					sub.subscribe('RawDataPoint', 'hello world')
+					sub.subscribe(RawDataPoint, 'hello world')
 
 					zmq.pub_connect(test_address) do |pub|
 						pub.send test_raw_data_point, topic: 'hello world'
@@ -307,7 +307,7 @@ describe ZeroMQ do
 
 			ZeroMQ.new do |zmq|
 				zmq.sub_bind(test_address) do |sub|
-					sub.subscribe('RawDataPoint', 'hello')
+					sub.subscribe(RawDataPoint, 'hello')
 
 					zmq.pub_connect(test_address) do |pub|
 						pub.send test_raw_data_point2, topic: 'hello world'
