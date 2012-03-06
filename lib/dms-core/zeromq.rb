@@ -143,7 +143,7 @@ class ZeroMQ
 						end
 
 						if on_topic.has_key? ''
-							on_topic[''].call(message)
+							on_topic[''].call(message, topic)
 						end
 					end
 				end
