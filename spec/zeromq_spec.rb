@@ -207,13 +207,8 @@ describe ZeroMQ do
 
 			ZeroMQ.new do |zmq|
 				zmq.sub_bind(test_address) do |sub|
-					sub.on RawDataPoint, 'hello world' do |message, topic|
-						message.should be_a RawDataPoint
-						message.path.should == 'system/memory'
-						message.component.should == 'cache'
-						message.time_stamp.should == Time.at(2.5).utc
-						message.value.should == 123
-
+					sub.on RawDataPoint, 'hello world' do |msg, topic|
+						message = msg
 						topic.should == 'hello world'
 					end
 
@@ -225,15 +220,16 @@ describe ZeroMQ do
 				end
 			end
 
+			message.should be_a RawDataPoint
+			message.path.should == 'system/memory'
+			message.component.should == 'cache'
+			message.time_stamp.should == Time.at(2.5).utc
+			message.value.should == 123
+
 			ZeroMQ.new do |zmq|
 				zmq.sub_bind(test_address) do |sub|
-					sub.on RawDataPoint, 'hello' do |message, topic|
-						message.should be_a RawDataPoint
-						message.path.should == 'system/memory'
-						message.component.should == 'cache'
-						message.time_stamp.should == Time.at(2.5).utc
-						message.value.should == 123
-
+					sub.on RawDataPoint, 'hello' do |msg, topic|
+						message = msg
 						topic = 'hello'
 					end
 
@@ -245,6 +241,12 @@ describe ZeroMQ do
 					sub.receive!
 				end
 			end
+
+			message.should be_a RawDataPoint
+			message.path.should == 'system/memory'
+			message.component.should == 'cache'
+			message.time_stamp.should == Time.at(2.5).utc
+			message.value.should == 123
 		end
 
 		it 'should support polling with topic' do
