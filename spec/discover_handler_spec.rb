@@ -24,18 +24,20 @@ describe DiscoverHandler do
 
 	it 'should respond to broadcas Discover message' do
 		message = nil
-		ZeroMQ.new do |zmq|
-			zmq.sub_bind(test_address) do |sub|
-				zmq.pub_connect(test_address) do |pub|
-					DiscoverHandler.new(sub, pub, 'magi.sigquit.net', 'data-processor', 123)
+		out = Capture.stderr do
+			ZeroMQ.new do |zmq|
+				zmq.sub_bind(test_address) do |sub|
+					zmq.pub_connect(test_address) do |pub|
+						DiscoverHandler.new(sub, pub, 'magi.sigquit.net', 'data-processor', 123)
 
-					sub.on Hello do |msg|
-						message = msg
+						sub.on Hello do |msg|
+							message = msg
+						end
+
+						pub.send Discover.new
+						sub.receive!
+						sub.receive!
 					end
-
-					pub.send Discover.new
-					sub.receive!
-					sub.receive!
 				end
 			end
 		end
@@ -50,45 +52,47 @@ describe DiscoverHandler do
 		good = []
 		bad = []
 
-		ZeroMQ.new do |zmq|
-			zmq.sub_bind(test_address) do |sub|
-				zmq.pub_connect(test_address) do |pub|
-					DiscoverHandler.new(sub, pub, 'magi.sigquit.net', 'data-processor', 123)
+		out = Capture.stderr do
+			ZeroMQ.new do |zmq|
+				zmq.sub_bind(test_address) do |sub|
+					zmq.pub_connect(test_address) do |pub|
+						DiscoverHandler.new(sub, pub, 'magi.sigquit.net', 'data-processor', 123)
 
-					got_init = nil
-					got_end = nil
+						got_init = nil
+						got_end = nil
 
-					sub.on Hello, 'init' do |msg|
-						got_init = true
-					end
+						sub.on Hello, 'init' do |msg|
+							got_init = true
+						end
 
-					sub.on Hello, 'end' do |msg|
-						got_end = true
-					end
+						sub.on Hello, 'end' do |msg|
+							got_end = true
+						end
 
-					pub.send Discover.new, topic: 'init'
-					until got_init
-						sub.receive!
-					end
+						pub.send Discover.new, topic: 'init'
+						until got_init
+							sub.receive!
+						end
 
-					sub.on Hello,'good' do |msg, topic|
-						good << msg
-					end
+						sub.on Hello,'good' do |msg, topic|
+							good << msg
+						end
 
-					sub.on Hello,'bad' do |msg, topic|
-						bad << msg
-					end
+						sub.on Hello,'bad' do |msg, topic|
+							bad << msg
+						end
 
-					pub.send Discover.new('/.*/', ''), topic: 'good'
-					pub.send Discover.new('bogous', ''), topic: 'bad'
-					pub.send Discover.new('/bogous/', ''), topic: 'bad'
-					pub.send Discover.new('/.*/', 'data-processor'), topic: 'good'
-					pub.send Discover.new('', 'bogous'), topic: 'bad'
-					pub.send Discover.new('', 'data-processor'), topic: 'good'
+						pub.send Discover.new('/.*/', ''), topic: 'good'
+						pub.send Discover.new('bogous', ''), topic: 'bad'
+						pub.send Discover.new('/bogous/', ''), topic: 'bad'
+						pub.send Discover.new('/.*/', 'data-processor'), topic: 'good'
+						pub.send Discover.new('', 'bogous'), topic: 'bad'
+						pub.send Discover.new('', 'data-processor'), topic: 'good'
 
-					pub.send Discover.new, topic: 'end'
-					until got_end
-						sub.receive!
+						pub.send Discover.new, topic: 'end'
+						until got_end
+							sub.receive!
+						end
 					end
 				end
 			end

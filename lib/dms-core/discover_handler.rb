@@ -21,8 +21,11 @@ class DiscoverHandler
 		@program = program.to_s
 
 		sub.on Discover do |discover, topic|
+			log.debug "received #{discover} message" 
 			if host_name_match?(discover.host_name) and program_match?(discover.program)
-				pub.send Hello.new(host_name, program, pid), topic: topic 
+				hello = Hello.new(host_name, program, pid)
+				log.info "responding for #{discover} with #{hello} on topic: #{topic}"
+				pub.send hello, topic: topic 
 			end
 		end
 	end
@@ -38,7 +41,8 @@ class DiscoverHandler
 
 	def program_match?(program)
 		return true if program == ''
-		program == @program
+		return true if program == @program
+		return false
 	end
 end
 
