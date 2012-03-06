@@ -124,6 +124,8 @@ class ZeroMQ
 				have? socket = context.socket(ZMQ::SUB)
 				begin
 					super socket, options
+
+					@on_handlers = {}
 					yield self
 				ensure
 					ok? socket.close
@@ -131,8 +133,26 @@ class ZeroMQ
 			end
 
 			def on(data_type, topic = '', &callback)
-				subscribe(data_type, topic)
-				super data_type, &callback
+				unless @on_handlers.has_key? data_type
+					@on_handlers[data_type] = {}
+
+					super data_type do |message, topic|
+						on_topic = @on_handlers[data_type]
+						if topic != '' and on_topic.has_key? topic
+							on_topic[topic].call(message, topic)
+						end
+
+						if on_topic.has_key? ''
+							on_topic[''].call(message)
+						end
+					end
+				end
+
+				on_topic = @on_handlers[data_type]
+				subscribe(data_type, topic) unless on_topic.has_key? topic
+				on_topic[topic] = callback
+
+				self
 			end
 
 			private

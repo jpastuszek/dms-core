@@ -249,6 +249,46 @@ describe ZeroMQ do
 			message.value.should == 123
 		end
 
+		it 'should pass topic messages to on handler with same topic' do
+			cpu_topic_messages = []
+			memory_topic_messages = []
+			all_messages = []
+
+			ZeroMQ.new do |zmq|
+				zmq.sub_bind(test_address) do |sub|
+					sub.on RawDataPoint, 'memory' do |message, topic|
+						memory_topic_messages << message
+					end
+
+					sub.on RawDataPoint, 'cpu' do |message, topic|
+						cpu_topic_messages << message
+					end
+
+					sub.on RawDataPoint, '' do |message, topic|
+						all_messages << message
+					end
+
+					zmq.pub_connect(test_address) do |pub|
+						pub.send test_raw_data_point, topic: 'memory'
+						pub.send test_raw_data_point2, topic: 'cpu'
+					end
+
+					sub.receive!
+					sub.receive!
+				end
+			end
+
+			cpu_topic_messages.should have(1).message
+			cpu_topic_messages.shift.path.should == 'system/CPU usage'
+
+			memory_topic_messages.should have(1).message
+			memory_topic_messages.shift.path.should == 'system/memory'
+
+			all_messages.should have(2).message
+			all_messages.shift.path.should == 'system/memory'
+			all_messages.shift.path.should == 'system/CPU usage'
+		end
+
 		it 'should support polling with topic' do
 			messages = []
 
