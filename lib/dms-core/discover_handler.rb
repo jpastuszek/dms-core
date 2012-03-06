@@ -15,10 +15,30 @@
 # You should have received a copy of the GNU General Public License
 # along with Distributed Monitoring System.  If not, see <http://www.gnu.org/licenses/>.
 
-require 'dms-core/logging'
-require 'dms-core/data_types'
-require 'dms-core/zeromq'
-require 'dms-core/dsl'
-require 'dms-core/module_loader'
-require 'dms-core/discover_handler'
+class DiscoverHandler
+	def initialize(sub, pub, host_name, program, pid)
+		@host_name = host_name.to_s
+		@program = program.to_s
+
+		sub.on Discover do |discover, topic|
+			if host_name_match?(discover.host_name) and program_match?(discover.program)
+				pub.send Hello.new(host_name, program, pid), topic: topic 
+			end
+		end
+	end
+
+	private
+
+	def host_name_match?(host_name)
+		return true if host_name == ''
+		return true if host_name.is_a? Regexp and host_name =~ @host_name
+		return true if host_name == @host_name
+		return false
+	end
+
+	def program_match?(program)
+		return true if program == ''
+		program == @program
+	end
+end
 
