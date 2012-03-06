@@ -308,6 +308,7 @@ class ZeroMQ
 			@poller.readables.each do |socket|
 				@sockets[socket].receive!
 			end
+			return true
 		end
 
 		def poll!
