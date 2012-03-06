@@ -248,7 +248,6 @@ class ZeroMQ
 
 					@receiver.on_other do |message|
 						@response_callback.call(message) if @response_callback
-						@response_callback = nil
 					end
 
 					yield self
@@ -264,6 +263,7 @@ class ZeroMQ
 
 			def receive!
 				@receiver.receive!
+				@response_callback = nil
 			end
 		end
 
