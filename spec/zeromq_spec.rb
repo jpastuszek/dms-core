@@ -44,17 +44,19 @@ describe ZeroMQ do
 
 	describe "PUSH and PULL" do
 		it 'should allow sending and receiving raw string messages' do
+			message = nil
 			ZeroMQ.new do |zmq|
 				zmq.pull_bind(test_address) do |pull|
 					zmq.push_connect(test_address) do |push|
 						push.send_raw 'hello world'
 					end
 
-					pull.on_raw do |message|
-						message.should == 'hello world'
+					pull.on_raw do |msg|
+						message = msg
 					end.receive!
 				end
 			end
+			message.should == 'hello world'
 		end
 
 		it 'should allow sending multiple objects' do
@@ -149,6 +151,30 @@ describe ZeroMQ do
 	end
 
 	describe 'PUB and SUB' do
+		it 'should allow sending and receiving raw string messages' do
+			message = nil
+			ZeroMQ.new do |zmq|
+				zmq.sub_bind(test_address) do |sub|
+					zmq.pub_connect(test_address) do |pub|
+						thread = Thread.new do
+							loop do
+								pub.send_raw 'hello world'
+								sleep 0.1
+							end
+						end
+
+						sub.on_raw do |msg|
+							message = msg
+						end.receive!
+
+						thread.kill
+					end
+				end
+			end
+
+			message.should == 'hello world'
+		end
+
 		it 'should allow sending and receinving objects' do
 			message = nil
 			ZeroMQ.new do |zmq|
@@ -182,8 +208,10 @@ describe ZeroMQ do
 				zmq.pub_bind(test_address) do |pub|
 					zmq.sub_connect(test_address) do |sub|
 						thread = Thread.new do
-							pub.send test_raw_data_point
-							sleep 0.1
+							loop do
+								pub.send test_raw_data_point
+								sleep 0.1
+							end
 						end
 
 						sub.on RawDataPoint do |raw_data_point|

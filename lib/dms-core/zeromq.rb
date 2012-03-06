@@ -155,6 +155,11 @@ class ZeroMQ
 				self
 			end
 
+			def on_raw(&callback)
+				subscribe
+				super &callback
+			end
+
 			private
 
 			def subscribe(object = nil, topic = '')
