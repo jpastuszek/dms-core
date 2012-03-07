@@ -45,7 +45,7 @@ class Discover < DataType
 	end
 
 	def to_s
-		"Discover[#{@host_name}/#{@program}]"
+		"Discover[#{@host_name.is_a?(Regexp) ? @host_name.inspect.scan(/\/.*\//).first : @host_name}/#{@program}]"
 	end
 
 	register(self)

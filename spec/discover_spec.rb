@@ -70,6 +70,7 @@ describe Discover do
 
 	it '#to_s gives nice printout' do
 		subject.to_s.should == 'Discover[magi/data-processor]'
+		Discover.new('/magi/', 'data-processor').to_s.should == 'Discover[/magi//data-processor]'
 	end
 end
 
