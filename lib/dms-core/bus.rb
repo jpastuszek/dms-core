@@ -35,8 +35,6 @@ class Bus
 	def initialize(sub, pub)
 		@sub = sub
 		@pub = pub
-		@poller = ZeroMQ::Poller.new
-		@poller << sub
 	end
 
 	def on(data_type, topic = '', &callback)
@@ -55,16 +53,12 @@ class Bus
 		@pub.send_raw(string, options)
 	end
 
-	def poll(time_out)
-		@poller.poll(time_out)
-	end
-	
-	def poll!(time)
-		@poller.poll!(time)
+	def socket
+		@sub.socket
 	end
 
-	def poll_for(socket)
-		@poller << socket
+	def receive!
+		@sub.receive!
 	end
 end
 

@@ -313,15 +313,7 @@ class ZeroMQ
 		end
 
 		def <<(object)
-			case object
-			when Receiver
-				@poller.register_readable(object.socket)
-			when SenderReceiver
-				@poller.register_readable(object.socket)
-			else
-				raise TypeError, 'expected Receiver or SenderReceiver type of object'
-			end
-
+			@poller.register_readable(object.socket)
 			@sockets[object.socket] = object
 		end
 

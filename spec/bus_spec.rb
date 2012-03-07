@@ -30,6 +30,7 @@ describe Bus do
 		it 'should allow sending objects' do
 			message = nil
 			ZeroMQ.new do |zmq|
+				poller = ZeroMQ::Poller.new
 				zmq.sub_bind(subscriber_address) do |sub|
 					zmq.pub_bind(publisher_address) do |pub|
 						sub.on Hello, 'test' do |msg|
@@ -37,10 +38,11 @@ describe Bus do
 						end
 
 						Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
-							bus.poll_for(sub)
+							poller << bus
+							poller << sub
 							begin
 								bus.send Hello.new('abc', 'xyz', 123), topic: 'test'
-								bus.poll(0.1)
+								poller.poll(0.1)
 							end until message
 						end
 					end
@@ -53,6 +55,7 @@ describe Bus do
 		it 'should allow receiving objects' do
 			message = nil
 			ZeroMQ.new do |zmq|
+				poller = ZeroMQ::Poller.new
 				zmq.sub_bind(subscriber_address) do |sub|
 					zmq.pub_bind(publisher_address) do |pub|
 						Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
@@ -60,10 +63,12 @@ describe Bus do
 								message = msg
 							end
 
-							bus.poll_for(sub)
+							poller << bus
+							poller << sub
+
 							begin
 								pub.send Hello.new('abc', 'xyz', 123), topic: 'test'
-								bus.poll(0.1)
+								poller.poll(0.1)
 							end until message
 						end
 					end
@@ -78,6 +83,7 @@ describe Bus do
 		it 'should allow sending objects' do
 			message = nil
 			ZeroMQ.new do |zmq|
+				poller = ZeroMQ::Poller.new
 				zmq.sub_connect(publisher_address) do |sub|
 					zmq.pub_connect(subscriber_address) do |pub|
 						sub.on Hello, 'test' do |msg|
@@ -85,10 +91,12 @@ describe Bus do
 						end
 
 						Bus.bind(zmq, publisher_address, subscriber_address) do |bus|
-							bus.poll_for(sub)
+							poller << bus
+							poller << sub
+
 							begin
 								bus.send Hello.new('abc', 'xyz', 123), topic: 'test'
-								bus.poll(0.1)
+								poller.poll(0.1)
 							end until message
 						end
 					end
@@ -101,6 +109,7 @@ describe Bus do
 		it 'should allow receiving objects' do
 			message = nil
 			ZeroMQ.new do |zmq|
+				poller = ZeroMQ::Poller.new
 				zmq.sub_connect(publisher_address) do |sub|
 					zmq.pub_connect(subscriber_address) do |pub|
 						Bus.bind(zmq, publisher_address, subscriber_address) do |bus|
@@ -108,10 +117,12 @@ describe Bus do
 								message = msg
 							end
 
-							bus.poll_for(sub)
+							poller << bus
+							poller << sub
+
 							begin
 								pub.send Hello.new('abc', 'xyz', 123), topic: 'test'
-								bus.poll(0.1)
+								poller.poll(0.1)
 							end until message
 						end
 					end

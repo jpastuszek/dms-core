@@ -22,15 +22,18 @@ class BusDetector
 		end
 	end
 
-	def initialize(program_id, bus)
+	def initialize(program_id, bus, poller = ZeroMQ::Poller.new)
 		@program_id = program_id.to_s + ':probe'
 		@bus = bus
+		@poller = poller
+		@poller << @bus
 
 		@ready = nil
 		@bus.on Hello, @program_id do |hello|
 			@ready = true
 			log.debug "got: #{hello}"
 		end
+
 		@discover = Discover.new
 	end
 	
@@ -44,7 +47,7 @@ class BusDetector
 				@bus.send @discover, topic: @program_id
 				next_discover += delay
 			end
-			break if @bus.poll(delay) and ready?
+			break if @poller.poll(delay) and ready?
 			raise NoBusError if end_time <= Time.now
 		end
 	end

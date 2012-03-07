@@ -32,6 +32,7 @@ describe BusResponder do
 			ZeroMQ.new do |zmq|
 				zmq.sub_bind(subscriber_address) do |sub|
 					zmq.pub_bind(publisher_address) do |pub|
+						poller = ZeroMQ::Poller.new
 						Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
 							BusResponder.new(bus, 'magi.sigquit.net', 'data-processor', 123)
 
@@ -40,11 +41,13 @@ describe BusResponder do
 								message = msg
 								got_hello = true
 							end
-							bus.poll_for(sub)
+
+							poller << bus
+							poller << sub
 
 							begin
 								pub.send Discover.new
-								bus.poll(0.1)
+								poller.poll(0.1)
 							end until got_hello
 						end
 					end
@@ -64,6 +67,7 @@ describe BusResponder do
 
 		out = Capture.stderr do
 			ZeroMQ.new do |zmq|
+				poller = ZeroMQ::Poller.new
 				zmq.sub_bind(subscriber_address) do |sub|
 					zmq.pub_bind(publisher_address) do |pub|
 						Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
@@ -79,11 +83,12 @@ describe BusResponder do
 								got_end = true
 							end
 
-							bus.poll_for(sub)
+							poller << bus
+							poller << sub
 
 							begin
 								pub.send Discover.new, topic: 'init'
-								bus.poll(0.1)
+								poller.poll(0.1)
 							end until got_init
 
 							sub.on Hello,'good' do |msg, topic|
@@ -104,7 +109,7 @@ describe BusResponder do
 							pub.send Discover.new, topic: 'end'
 
 							begin
-								bus.poll(0.1)
+								poller.poll(0.1)
 							end until got_end
 						end
 					end

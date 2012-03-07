@@ -29,6 +29,7 @@ describe BusDetector do
 	it 'should broadcast Discovery messages and return on Hello response' do
 		message = nil
 		ZeroMQ.new do |zmq|
+			poller = ZeroMQ::Poller.new
 			zmq.sub_bind(subscriber_address) do |sub|
 				zmq.pub_bind(publisher_address) do |pub|
 					sub.on Discover do |msg, topic|
@@ -37,8 +38,8 @@ describe BusDetector do
 					end
 
 					Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
-						bus.poll_for(sub)
-						BusDetector.new('test-program', bus).discover(4)
+						poller << sub
+						BusDetector.new('test-program', bus, poller).discover(4)
 					end
 				end
 			end
