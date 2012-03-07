@@ -36,7 +36,7 @@ describe Bus do
 							message = msg
 						end
 
-						Bus.connect(zmq, subscriber_address, publisher_address) do |bus|
+						Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
 							thread = Thread.new do
 								loop do
 									bus.send Hello.new('abc', 'xyz', 123), topic: 'test'
@@ -59,7 +59,7 @@ describe Bus do
 			ZeroMQ.new do |zmq|
 				zmq.sub_bind(subscriber_address) do |sub|
 					zmq.pub_bind(publisher_address) do |pub|
-						Bus.connect(zmq, subscriber_address, publisher_address) do |bus|
+						Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
 							bus.on Hello, 'test' do |msg|
 								message = msg
 							end
@@ -92,7 +92,7 @@ describe Bus do
 							message = msg
 						end
 
-						Bus.bind(zmq, subscriber_address, publisher_address) do |bus|
+						Bus.bind(zmq, publisher_address, subscriber_address) do |bus|
 							thread = Thread.new do
 								loop do
 									bus.send Hello.new('abc', 'xyz', 123), topic: 'test'
@@ -115,7 +115,7 @@ describe Bus do
 			ZeroMQ.new do |zmq|
 				zmq.sub_connect(publisher_address) do |sub|
 					zmq.pub_connect(subscriber_address) do |pub|
-						Bus.bind(zmq, subscriber_address, publisher_address) do |bus|
+						Bus.bind(zmq, publisher_address, subscriber_address) do |bus|
 							bus.on Hello, 'test' do |msg|
 								message = msg
 							end

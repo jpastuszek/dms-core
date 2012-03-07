@@ -18,21 +18,33 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe BusDetector do
-	let :test_address do
-		'ipc:///tmp/dms-core-test'
+	let :subscriber_address do
+		'ipc:///tmp/dms-core-test-sub'
+	end
+
+	let :publisher_address do
+		'ipc:///tmp/dms-core-test-pub'
 	end
 
 	it 'should broadcast Discovery messages and return on Hello response' do
 		message = nil
 		ZeroMQ.new do |zmq|
-			zmq.sub_bind(test_address) do |sub|
-				zmq.pub_connect(test_address) do |pub|
+			zmq.sub_bind(subscriber_address) do |sub|
+				zmq.pub_bind(publisher_address) do |pub|
 					sub.on Discover do |msg, topic|
 						message = msg
 						pub.send Hello.new('magi.sigquit.net', 'test', 123), topic: topic
 					end
 
-					BusDetector.new('test-program', sub, pub).discover(4)
+					thread = Thread.new do
+						sub.receive!
+					end
+
+					Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
+						BusDetector.new('test-program', bus).discover(4)
+
+						thread.kill
+					end
 				end
 			end
 		end
@@ -45,10 +57,8 @@ describe BusDetector do
 		message = nil
 		expect {
 			ZeroMQ.new do |zmq|
-				zmq.sub_bind(test_address) do |sub|
-					zmq.pub_connect(test_address) do |pub|
-						BusDetector.new('test-program', sub, pub).discover(0.1)
-					end
+				Bus.connect(zmq, publisher_address, subscriber_address, linger: 0) do |bus|
+					BusDetector.new('test-program', bus).discover(0.1)
 				end
 			end
 		}.to raise_error BusDetector::NoBusError, 'no discovery response received'

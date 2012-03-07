@@ -16,17 +16,17 @@
 # along with Distributed Monitoring System.  If not, see <http://www.gnu.org/licenses/>.
 
 class Bus
-	def self.bind(context, subscriber_address, publisher_address)
-		context.sub_bind(subscriber_address) do |sub|
-			context.pub_bind(publisher_address) do |pub|
+	def self.bind(context, publisher_address, subscriber_address, publisher_options = {}, subscriber_options = {})
+		context.sub_bind(subscriber_address, subscriber_options) do |sub|
+			context.pub_bind(publisher_address, publisher_options) do |pub|
 				yield self.new(sub, pub)
 			end
 		end
 	end
 
-	def self.connect(context, subscriber_address, publisher_address)
-		context.sub_connect(publisher_address) do |sub|
-			context.pub_connect(subscriber_address) do |pub|
+	def self.connect(context, publisher_address, subscriber_address, publisher_options = {}, subscriber_options = {})
+		context.sub_connect(publisher_address, subscriber_options) do |sub|
+			context.pub_connect(subscriber_address, publisher_options) do |pub|
 				yield self.new(sub, pub)
 			end
 		end

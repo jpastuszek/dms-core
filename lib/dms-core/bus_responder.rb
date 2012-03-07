@@ -16,16 +16,16 @@
 # along with Distributed Monitoring System.  If not, see <http://www.gnu.org/licenses/>.
 
 class BusResponder
-	def initialize(sub, pub, host_name, program, pid)
+	def initialize(bus, host_name, program, pid)
 		@host_name = host_name.to_s
 		@program = program.to_s
 
-		sub.on Discover do |discover, topic|
+		bus.on Discover do |discover, topic|
 			log.debug "received #{discover} message" 
 			if host_name_match?(discover.host_name) and program_match?(discover.program)
 				hello = Hello.new(host_name, program, pid)
 				log.info "responding for #{discover} with #{hello} on topic: #{topic}"
-				pub.send hello, topic: topic 
+				bus.send hello, topic: topic 
 			end
 		end
 	end
