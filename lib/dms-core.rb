@@ -22,4 +22,5 @@ require 'dms-core/dsl'
 require 'dms-core/module_loader'
 require 'dms-core/bus_responder'
 require 'dms-core/bus_detector'
+require 'dms-core/bus'
 
