@@ -336,8 +336,19 @@ class ZeroMQ
 			return true
 		end
 
-		def poll!
-			loop{poll}
+		def poll!(time = nil)
+			if time
+				end_time = Time.now + time
+				handled_messages = false
+				loop do
+					time_remaining = end_time - Time.now
+					return handled_messages if time_remaining <= 0
+					poll(time_remaining)
+					handled_messages = true
+				end
+			else
+				loop{poll}
+			end
 		end
 	end
 
