@@ -36,14 +36,9 @@ describe BusDetector do
 						pub.send Hello.new('magi.sigquit.net', 'test', 123), topic: topic
 					end
 
-					thread = Thread.new do
-						sub.receive!
-					end
-
 					Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
+						bus.poll_for(sub)
 						BusDetector.new('test-program', bus).discover(4)
-
-						thread.kill
 					end
 				end
 			end

@@ -37,15 +37,11 @@ describe Bus do
 						end
 
 						Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
-							thread = Thread.new do
-								loop do
-									bus.send Hello.new('abc', 'xyz', 123), topic: 'test'
-									sleep 0.1
-								end
-							end
-
-							sub.receive!
-							thread.kill
+							bus.poll_for(sub)
+							begin
+								bus.send Hello.new('abc', 'xyz', 123), topic: 'test'
+								bus.poll(0.1)
+							end until message
 						end
 					end
 				end
@@ -64,15 +60,11 @@ describe Bus do
 								message = msg
 							end
 
-							thread = Thread.new do
-								loop do
-									pub.send Hello.new('abc', 'xyz', 123), topic: 'test'
-									sleep 0.1
-								end
-							end
-
-							bus.poll(4)
-							thread.kill
+							bus.poll_for(sub)
+							begin
+								pub.send Hello.new('abc', 'xyz', 123), topic: 'test'
+								bus.poll(0.1)
+							end until message
 						end
 					end
 				end
@@ -93,15 +85,11 @@ describe Bus do
 						end
 
 						Bus.bind(zmq, publisher_address, subscriber_address) do |bus|
-							thread = Thread.new do
-								loop do
-									bus.send Hello.new('abc', 'xyz', 123), topic: 'test'
-									sleep 0.1
-								end
-							end
-
-							sub.receive!
-							thread.kill
+							bus.poll_for(sub)
+							begin
+								bus.send Hello.new('abc', 'xyz', 123), topic: 'test'
+								bus.poll(0.1)
+							end until message
 						end
 					end
 				end
@@ -120,15 +108,11 @@ describe Bus do
 								message = msg
 							end
 
-							thread = Thread.new do
-								loop do
-									pub.send Hello.new('abc', 'xyz', 123), topic: 'test'
-									sleep 0.1
-								end
-							end
-
-							bus.poll(4)
-							thread.kill
+							bus.poll_for(sub)
+							begin
+								pub.send Hello.new('abc', 'xyz', 123), topic: 'test'
+								bus.poll(0.1)
+							end until message
 						end
 					end
 				end

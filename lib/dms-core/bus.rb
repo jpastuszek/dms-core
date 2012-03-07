@@ -63,8 +63,8 @@ class Bus
 		@poller.poll!(time)
 	end
 
-	def subscirber
-		@sub
+	def poll_for(socket)
+		@poller << socket
 	end
 end
 

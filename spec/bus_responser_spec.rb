@@ -35,20 +35,17 @@ describe BusResponder do
 						Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
 							BusResponder.new(bus, 'magi.sigquit.net', 'data-processor', 123)
 
+							got_hello = false
 							sub.on Hello do |msg|
 								message = msg
+								got_hello = true
 							end
+							bus.poll_for(sub)
 
-							thread = Thread.new do
-								loop do
-									pub.send Discover.new
-									sleep 0.1
-								end
-							end
-
-							bus.poll(4)
-							sub.receive!
-							thread.kill
+							begin
+								pub.send Discover.new
+								bus.poll(0.1)
+							end until got_hello
 						end
 					end
 				end
@@ -69,14 +66,10 @@ describe BusResponder do
 			ZeroMQ.new do |zmq|
 				zmq.sub_bind(subscriber_address) do |sub|
 					zmq.pub_bind(publisher_address) do |pub|
-						Bus.connect(zmq, publisher_address, subscriber_address, linger: 0) do |bus|
+						Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
 							BusResponder.new(bus, 'magi.sigquit.net', 'data-processor', 123)
-							bus_poller = Thread.new do
-								bus.poll!(4)
-							end
-
-							got_init = nil
-							got_end = nil
+							got_init = false
+							got_end = false
 
 							sub.on Hello, 'init' do |msg|
 								got_init = true
@@ -86,17 +79,12 @@ describe BusResponder do
 								got_end = true
 							end
 
-							thread = Thread.new do
-								loop do
-									pub.send Discover.new, topic: 'init'
-									sleep 0.1
-								end
-							end
+							bus.poll_for(sub)
 
-							until got_init
-								sub.receive!
-							end
-							thread.kill
+							begin
+								pub.send Discover.new, topic: 'init'
+								bus.poll(0.1)
+							end until got_init
 
 							sub.on Hello,'good' do |msg, topic|
 								good << msg
@@ -115,11 +103,9 @@ describe BusResponder do
 
 							pub.send Discover.new, topic: 'end'
 
-							until got_end
-								sub.receive!
-							end
-
-							bus_poller.kill
+							begin
+								bus.poll(0.1)
+							end until got_end
 						end
 					end
 				end
