@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Distributed Monitoring System.  If not, see <http://www.gnu.org/licenses/>.
 
-class DiscoverHandler
+class BusResponder
 	def initialize(sub, pub, host_name, program, pid)
 		@host_name = host_name.to_s
 		@program = program.to_s

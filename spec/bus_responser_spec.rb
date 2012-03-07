@@ -17,7 +17,7 @@
 
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
-describe DiscoverHandler do
+describe BusResponder do
 	let :test_address do
 		'ipc:///tmp/dms-core-test'
 	end
@@ -28,7 +28,7 @@ describe DiscoverHandler do
 			ZeroMQ.new do |zmq|
 				zmq.sub_bind(test_address) do |sub|
 					zmq.pub_connect(test_address) do |pub|
-						DiscoverHandler.new(sub, pub, 'magi.sigquit.net', 'data-processor', 123)
+						BusResponder.new(sub, pub, 'magi.sigquit.net', 'data-processor', 123)
 
 						sub.on Hello do |msg|
 							message = msg
@@ -56,7 +56,7 @@ describe DiscoverHandler do
 			ZeroMQ.new do |zmq|
 				zmq.sub_bind(test_address) do |sub|
 					zmq.pub_connect(test_address) do |pub|
-						DiscoverHandler.new(sub, pub, 'magi.sigquit.net', 'data-processor', 123)
+						BusResponder.new(sub, pub, 'magi.sigquit.net', 'data-processor', 123)
 
 						got_init = nil
 						got_end = nil
