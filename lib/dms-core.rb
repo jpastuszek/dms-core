@@ -21,4 +21,5 @@ require 'dms-core/zeromq'
 require 'dms-core/dsl'
 require 'dms-core/module_loader'
 require 'dms-core/discover_handler'
+require 'dms-core/bus_detector'
 
