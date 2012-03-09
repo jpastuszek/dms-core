@@ -59,6 +59,10 @@ class ZeroMQ
 	class Socket
 		include ZeroMQError
 
+		def initialize(socket)
+			@socket = socket
+		end
+
 		attr_reader :socket
 
 		def connect(address)
@@ -98,7 +102,7 @@ class ZeroMQ
 		end
 
 		def initialize(socket, options = {})
-			@socket = socket
+			super socket
 
 			ok? @socket.setsockopt(ZMQ::HWM, options[:hwm] || 1000)
 			ok? @socket.setsockopt(ZMQ::SWAP, options[:swap] || 0)
@@ -180,7 +184,7 @@ class ZeroMQ
 		end
 
 		def initialize(socket, options = {})
-			@socket = socket
+			super socket
 			@data_type_callbacks = {}
 			@raw_callbacks = []
 			@othre_callbacks = []
@@ -293,7 +297,7 @@ class ZeroMQ
 		end
 
 		def initialize(socket, options = {})
-			@socket = socket
+			super socket
 			@sender = Sender.new(socket, options)
 			@receiver = Receiver.new(socket, options)
 		end
