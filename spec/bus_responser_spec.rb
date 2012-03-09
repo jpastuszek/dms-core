@@ -120,5 +120,41 @@ describe BusResponder do
 		good.should have(3).messages
 		bad.should have(0).messages
 	end
+
+	it 'should extend Bus class' do
+		message = nil
+		out = Capture.stderr do
+			ZeroMQ.new do |zmq|
+				zmq.sub_bind(subscriber_address) do |sub|
+					zmq.pub_bind(publisher_address) do |pub|
+						poller = ZeroMQ::Poller.new
+						Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
+							bus.responder('magi.sigquit.net', 'data-processor', 123)
+
+							got_hello = false
+							sub.on Hello do |msg|
+								message = msg
+								got_hello = true
+							end
+
+							poller << bus
+							poller << sub
+
+							begin
+								pub.send Discover.new
+								poller.poll(0.1)
+							end until got_hello
+						end
+					end
+				end
+			end
+		end
+
+		message.should_not be_nil
+		message.host_name.should == 'magi.sigquit.net'
+		message.program.should == 'data-processor'
+		message.pid.should == 123
+	end
+
 end
 

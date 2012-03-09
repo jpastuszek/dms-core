@@ -46,3 +46,9 @@ class BusResponder
 	end
 end
 
+class Bus
+	def responder(host_name, program, pid)
+		BusResponder.new(self, host_name, program, pid)
+	end
+end
+
