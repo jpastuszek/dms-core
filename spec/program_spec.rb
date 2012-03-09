@@ -19,10 +19,25 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe Program do
 	let :version do
-		(Pathname.new(__FILE__).dirname + '..' + 'VERSION').read
+		'0.0.0'
 	end
 
 	describe Program::Daemon do
+		it 'should provide --version' do
+			out = Capture.stdout do
+				Capture.stderr do
+					expect {
+						Program::Daemon.new('DMS Test Daemon', version, ['--version']) do
+							main do |s|
+							end
+						end
+					}.to raise_error SystemExit
+				end
+			end
+
+			out.should =~ /version "0.0.0"/
+		end
+
 		it 'should log program name, version, zeromq version and pid and provide this values in settings' do
 			settings = nil
 			out = Capture.stderr do

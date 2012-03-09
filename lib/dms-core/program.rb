@@ -56,6 +56,8 @@ class Program
 
 		@cli ||= CLI.new
 
+		@cli.version version
+		
 		@cli.switch :debug,
 				short: :d,
 				description: 'enable debugging'
