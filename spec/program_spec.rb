@@ -56,6 +56,24 @@ describe Program do
 			settings.pid.should be_a Integer
 		end
 
+		it 'should allow validation of settings' do
+			settings = nil
+			out = Capture.stderr do
+				expect {
+					Program::Daemon.new('DMS Test Daemon', version) do
+						cli do 
+						end
+
+						validate do |settings|
+							raise 'test'
+						end
+					end
+				}.to raise_error SystemExit
+			end
+
+			out.should =~ /Error: test/
+		end
+
 		it 'should set up logging' do
 			settings = nil
 			Logging.logger.root.level.should == 1

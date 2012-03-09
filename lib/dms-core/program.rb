@@ -29,6 +29,7 @@ class Program
 
 	def initialize(program_name, version, argv = ARGV, &block)
 		@cli = nil
+		@validator = lambda{|s| }
 		@main = nil
 
 		dsl_method :cli do |&block|
@@ -48,6 +49,10 @@ class Program
 			end
 		end
 
+		dsl_method :validate do |&block|
+			@validator = block
+		end
+
 		dsl_method :main do |&block|
 			@main = block
 		end
@@ -62,7 +67,7 @@ class Program
 				short: :d,
 				description: 'enable debugging'
 
-		settings = @cli.parse!(argv)
+		settings = @cli.parse!(argv, &@validator)
 
 		settings.program_name = program_name
 		settings.version = version
