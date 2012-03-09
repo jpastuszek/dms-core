@@ -62,22 +62,18 @@ class Program
 
 		settings = @cli.parse!(argv)
 
-		settings.progarm_name = program_name
-		settings.version = (Pathname.new(__FILE__).dirname + '../VERSION').read
+		settings.program_name = program_name
+		settings.version = (Pathname.new(__FILE__).dirname + '..' + '..' + 'VERSION').read
 		settings.libzmq_version = ZeroMQ.lib_version
 		settings.libzmq_binding_version = ZeroMQ.binding_version
 		settings.pid = Process.pid
 
 		Logging.logger.root.level = :debug if settings.debug
 
-		logging_class_name main_class_name
+		logging_class_name program_name.delete ' '
 		log.info "Starting #{settings.program_name} version #{settings.version} (LibZMQ version #{settings.libzmq_version}, ffi-ruby version #{settings.libzmq_binding_version}); pid #{settings.pid}"
 
 		@main.call(settings) if @main
-	end
-
-	def main_class_name
-		@program_name.delete(' ')
 	end
 end
 

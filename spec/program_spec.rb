@@ -21,22 +21,31 @@ describe Program do
 	describe Program::Daemon do
 		it 'should log program name, version, zeromq version and pid and provide this values in settings' do
 			settings = nil
-			Program::Daemon.new('DMS Test Daemon') do
-				main do |s|
-					settings = s
+			out = Capture.stderr do
+				Program::Daemon.new('DMS Test Daemon') do
+					main do |s|
+						settings = s
+					end
 				end
 			end
 
-			p settings
+			out.should =~ /DMSTestDaemon : Starting DMS Test Daemon version \d+\.\d+\.\d+ \(LibZMQ version \d+\.\d+\.\d+, ffi-ruby version \d+\.\d+\.\d+\); pid \d+/
+			settings.program_name.should == 'DMS Test Daemon'
+			settings.version.should =~ /^\d+\.\d+\.\d+$/
+			settings.libzmq_version.should =~ /^\d+\.\d+\.\d+$/
+			settings.libzmq_binding_version.should =~ /^\d+\.\d+\.\d+$/
+			settings.pid.should be_a Integer
 		end
 
 		it 'should set up logging' do
 			settings = nil
 			Logging.logger.root.level.should == 1
 
-			Program::Daemon.new('DMS Test Daemon', ['-d']) do
-				main do |s|
-					settings = s
+			out = Capture.stderr do
+				Program::Daemon.new('DMS Test Daemon', ['-d']) do
+					main do |s|
+						settings = s
+					end
 				end
 			end
 
@@ -47,13 +56,15 @@ describe Program do
 		it 'should have console_connection cli generator' do
 			settings = nil
 
-			Program::Daemon.new('DMS Test Daemon') do
-				cli do
-					console_connection
-				end
-				
-				main do |s|
-					settings = s
+			out = Capture.stderr do
+				Program::Daemon.new('DMS Test Daemon') do
+					cli do
+						console_connection
+					end
+					
+					main do |s|
+						settings = s
+					end
 				end
 			end
 
