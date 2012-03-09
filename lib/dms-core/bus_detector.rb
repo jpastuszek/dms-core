@@ -57,4 +57,9 @@ class BusDetector
 	end
 end
 
+class Bus
+	def ready!(program_id, time_out = 4, poller = ZeroMQ::Poller.new)
+		BusDetector.new(program_id, self, poller).discover(time_out)
+	end
+end
 

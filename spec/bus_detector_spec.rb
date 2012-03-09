@@ -59,5 +59,28 @@ describe BusDetector do
 			end
 		}.to raise_error BusDetector::NoBusError, 'no discovery response received'
 	end
+
+	it 'should extend Bus class' do
+		message = nil
+		ZeroMQ.new do |zmq|
+			poller = ZeroMQ::Poller.new
+			zmq.sub_bind(subscriber_address) do |sub|
+				zmq.pub_bind(publisher_address) do |pub|
+					sub.on Discover do |msg, topic|
+						message = msg
+						pub.send Hello.new('magi.sigquit.net', 'test', 123), topic: topic
+					end
+
+					Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
+						poller << sub
+						bus.ready!('test-program', 4, poller)
+					end
+				end
+			end
+		end
+
+		message.should_not be_nil
+		message.should be_a Discover
+	end
 end
 
