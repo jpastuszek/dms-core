@@ -18,11 +18,15 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe Program do
+	let :version do
+		(Pathname.new(__FILE__).dirname + '..' + 'VERSION').read
+	end
+
 	describe Program::Daemon do
 		it 'should log program name, version, zeromq version and pid and provide this values in settings' do
 			settings = nil
 			out = Capture.stderr do
-				Program::Daemon.new('DMS Test Daemon') do
+				Program::Daemon.new('DMS Test Daemon', version) do
 					main do |s|
 						settings = s
 					end
@@ -42,7 +46,7 @@ describe Program do
 			Logging.logger.root.level.should == 1
 
 			out = Capture.stderr do
-				Program::Daemon.new('DMS Test Daemon', ['-d']) do
+				Program::Daemon.new('DMS Test Daemon', version, ['-d']) do
 					main do |s|
 						settings = s
 					end
@@ -57,7 +61,7 @@ describe Program do
 			settings = nil
 
 			out = Capture.stderr do
-				Program::Daemon.new('DMS Test Daemon') do
+				Program::Daemon.new('DMS Test Daemon', version) do
 					cli do
 						console_connection
 					end

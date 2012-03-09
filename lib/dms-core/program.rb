@@ -27,7 +27,7 @@ class Program
 
 	include DSL
 
-	def initialize(program_name, argv = ARGV, &block)
+	def initialize(program_name, version, argv = ARGV, &block)
 		@cli = nil
 		@main = nil
 
@@ -63,7 +63,7 @@ class Program
 		settings = @cli.parse!(argv)
 
 		settings.program_name = program_name
-		settings.version = (Pathname.new(__FILE__).dirname + '..' + '..' + 'VERSION').read
+		settings.version = version
 		settings.libzmq_version = ZeroMQ.lib_version
 		settings.libzmq_binding_version = ZeroMQ.binding_version
 		settings.pid = Process.pid
