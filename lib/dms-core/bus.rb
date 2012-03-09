@@ -62,3 +62,13 @@ class Bus
 	end
 end
 
+class ZeroMQ
+	def bus_connect(publisher_address, subscriber_address, publisher_options = {}, subscriber_options = {}, &block)
+		Bus.connect(self, publisher_address, subscriber_address, publisher_options, subscriber_options, &block)
+	end
+
+	def bus_bind(publisher_address, subscriber_address, publisher_options = {}, subscriber_options = {}, &block)
+		Bus.bind(self, publisher_address, subscriber_address, publisher_options, subscriber_options, &block)
+	end
+end
+

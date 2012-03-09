@@ -77,6 +77,32 @@ describe Bus do
 
 			message.host_name.should == 'abc'
 		end
+
+		it 'extends ZeroMQ class' do
+			message = nil
+			ZeroMQ.new do |zmq|
+				poller = ZeroMQ::Poller.new
+				zmq.sub_bind(subscriber_address) do |sub|
+					zmq.pub_bind(publisher_address) do |pub|
+						zmq.bus_connect(publisher_address, subscriber_address) do |bus|
+							bus.on Hello, 'test' do |msg|
+								message = msg
+							end
+
+							poller << bus
+							poller << sub
+
+							begin
+								pub.send Hello.new('abc', 'xyz', 123), topic: 'test'
+								poller.poll(0.1)
+							end until message
+						end
+					end
+				end
+			end
+
+			message.host_name.should == 'abc'
+		end
 	end
 
 	context 'bind' do
@@ -113,6 +139,32 @@ describe Bus do
 				zmq.sub_connect(publisher_address) do |sub|
 					zmq.pub_connect(subscriber_address) do |pub|
 						Bus.bind(zmq, publisher_address, subscriber_address) do |bus|
+							bus.on Hello, 'test' do |msg|
+								message = msg
+							end
+
+							poller << bus
+							poller << sub
+
+							begin
+								pub.send Hello.new('abc', 'xyz', 123), topic: 'test'
+								poller.poll(0.1)
+							end until message
+						end
+					end
+				end
+			end
+
+			message.host_name.should == 'abc'
+		end
+
+		it 'extends ZeroMQ class' do
+			message = nil
+			ZeroMQ.new do |zmq|
+				poller = ZeroMQ::Poller.new
+				zmq.sub_connect(publisher_address) do |sub|
+					zmq.pub_connect(subscriber_address) do |pub|
+						zmq.bus_bind(publisher_address, subscriber_address) do |bus|
 							bus.on Hello, 'test' do |msg|
 								message = msg
 							end
