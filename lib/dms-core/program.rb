@@ -25,6 +25,13 @@ class Program
 	class Daemon < Program
 	end
 
+	class Main
+		def initialize(class_name, settings, &block)
+			logging_class_name class_name
+			instance_exec settings, &block
+		end
+	end
+
 	include DSL
 
 	def initialize(program_name, version, argv = ARGV, &block)
@@ -77,10 +84,11 @@ class Program
 
 		Logging.logger.root.level = :debug if settings.debug
 
-		logging_class_name program_name.delete ' '
+		class_name = program_name.delete ' '
+		logging_class_name class_name
 		log.info "Starting #{settings.program_name} version #{settings.version} (LibZMQ version #{settings.libzmq_version}, ffi-ruby version #{settings.libzmq_binding_version}); pid #{settings.pid}"
 
-		@main.call(settings) if @main
+		Main.new(class_name, settings, &@main) if @main
 	end
 end
 

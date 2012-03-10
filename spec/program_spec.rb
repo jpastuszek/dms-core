@@ -38,6 +38,18 @@ describe Program do
 			out.should =~ /version "0.0.0"/
 		end
 
+		it 'should set logging class name to match program name' do
+			out = Capture.stderr do
+				Program::Daemon.new('DMS Test Daemon', version) do
+					main do |s|
+						log.info 'test'
+					end
+				end
+			end
+
+			out.should =~ /DMSTestDaemon : test/
+		end
+
 		it 'should log program name, version, zeromq version and pid and provide this values in settings' do
 			settings = nil
 			out = Capture.stderr do
@@ -48,7 +60,7 @@ describe Program do
 				end
 			end
 
-			out.should =~ /DMSTestDaemon : Starting DMS Test Daemon version \d+\.\d+\.\d+ \(LibZMQ version \d+\.\d+\.\d+, ffi-ruby version \d+\.\d+\.\d+\); pid \d+/
+			out.should =~ /Starting DMS Test Daemon version \d+\.\d+\.\d+ \(LibZMQ version \d+\.\d+\.\d+, ffi-ruby version \d+\.\d+\.\d+\); pid \d+/
 			settings.program_name.should == 'DMS Test Daemon'
 			settings.version.should =~ /^\d+\.\d+\.\d+$/
 			settings.libzmq_version.should =~ /^\d+\.\d+\.\d+$/
