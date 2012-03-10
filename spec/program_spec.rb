@@ -63,38 +63,6 @@ describe Program do
 			settings.pid.should be_a Integer
 		end
 
-		describe '#main_loop' do
-			it 'should log ready on #main_loop' do
-				Capture.stderr do
-					Program::Daemon.new('DMS Test Daemon', version) do
-						main do |s|
-						end
-					end
-				end.should_not include 'ready'
-
-				Capture.stderr do
-					Program::Daemon.new('DMS Test Daemon', version) do
-						main do |s|
-							main_loop do
-							end
-						end
-					end
-				end.should include 'ready'
-			end
-
-			it 'should capture exceptions and log them' do
-				Capture.stderr do
-					Program::Daemon.new('DMS Test Daemon', version) do
-						main do |s|
-							main_loop do
-								raise 'test'
-							end
-						end
-					end
-				end.should include 'got error: RuntimeError: test'
-			end
-		end
-
 		it 'should log program name done at exit' do
 			Capture.stderr do
 				Program::Daemon.new('DMS Test Daemon', version) do
@@ -112,8 +80,35 @@ describe Program do
 							raise
 						end
 					end
-				}.to raise_error RuntimeError
+				}.to raise_error SystemExit
 			end.should include 'DMS Test Daemon done'
+		end
+
+		it 'should log startup errors' do
+			Capture.stderr do
+				expect {
+					Program::Daemon.new('DMS Test Daemon', version) do
+						main do |s|
+							raise 'test'
+						end
+					end
+				}.to raise_error SystemExit
+			end.should include 'got error: RuntimeError: test'
+		end
+
+		it 'exit with 2 on startup errors' do
+			Capture.stderr do
+				expect {
+					Program::Daemon.new('DMS Test Daemon', version) do
+						main do |s|
+							raise 'test'
+						end
+					end
+				}.to raise_error { |error| 
+					error.should be_a SystemExit
+					error.status.should == 2
+				}
+			end
 		end
 
 		it 'should allow validation of settings' do
@@ -161,6 +156,57 @@ describe Program do
 
 			settings.console_subscriber.should == 'tcp://127.0.0.1:12000'
 			settings.console_publisher.should == 'tcp://127.0.0.1:12001'
+		end
+	end
+
+	describe '#main_loop' do
+		it 'should log ready on #main_loop' do
+			Capture.stderr do
+				Program::Daemon.new('DMS Test Daemon', version) do
+					main do |s|
+					end
+				end
+			end.should_not include 'ready'
+
+			Capture.stderr do
+				Program::Daemon.new('DMS Test Daemon', version) do
+					main do |s|
+						main_loop do
+						end
+					end
+				end
+			end.should include 'ready'
+		end
+
+		it 'should capture exceptions and log them' do
+			Capture.stderr do
+				expect {
+					Program::Daemon.new('DMS Test Daemon', version) do
+						main do |s|
+							main_loop do
+								raise 'test'
+							end
+						end
+					end
+				}.to raise_error SystemExit
+			end.should include 'got error: RuntimeError: test'
+		end
+
+		it 'exit with 3 on startup errors' do
+			Capture.stderr do
+				expect {
+					Program::Daemon.new('DMS Test Daemon', version) do
+						main do |s|
+							main_loop do
+								raise 'test'
+							end
+						end
+					end
+				}.to raise_error { |error| 
+					error.should be_a SystemExit
+					error.status.should == 3
+				}
+			end
 		end
 	end
 end

@@ -34,6 +34,9 @@ class Program
 			log.info "Starting #{@settings.program_name} version #{@settings.version} (LibZMQ version #{@settings.libzmq_version}, ffi-ruby version #{@settings.libzmq_binding_version}); pid #{@settings.pid}"
 
 			instance_exec @settings, &block
+		rescue => error
+			log.fatal 'got error', error
+			exit 2
 		ensure
 			log.info "#{@settings.program_name} done"
 		end
@@ -45,6 +48,7 @@ class Program
 			log.info 'interrupted'
 		rescue => error
 			log.fatal 'got error', error
+			exit 3
 		ensure
 			log.info 'shutting down...'
 		end
