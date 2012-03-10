@@ -63,21 +63,36 @@ describe Program do
 			settings.pid.should be_a Integer
 		end
 
-		it 'should log ready on #ready' do
-			Capture.stderr do
-				Program::Daemon.new('DMS Test Daemon', version) do
-					main do |s|
+		describe '#main_loop' do
+			it 'should log ready on #main_loop' do
+				Capture.stderr do
+					Program::Daemon.new('DMS Test Daemon', version) do
+						main do |s|
+						end
 					end
-				end
-			end.should_not include 'ready'
+				end.should_not include 'ready'
 
-			Capture.stderr do
-				Program::Daemon.new('DMS Test Daemon', version) do
-					main do |s|
-						ready
+				Capture.stderr do
+					Program::Daemon.new('DMS Test Daemon', version) do
+						main do |s|
+							main_loop do
+							end
+						end
 					end
-				end
-			end.should include 'ready'
+				end.should include 'ready'
+			end
+
+			it 'should capture exceptions and log them' do
+				Capture.stderr do
+					Program::Daemon.new('DMS Test Daemon', version) do
+						main do |s|
+							main_loop do
+								raise 'test'
+							end
+						end
+					end
+				end.should include 'got error: RuntimeError: test'
+			end
 		end
 
 		it 'should log program name done at exit' do
