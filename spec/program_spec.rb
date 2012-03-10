@@ -68,6 +68,31 @@ describe Program do
 			settings.pid.should be_a Integer
 		end
 
+		it 'should log program name done at exit' do
+			out = Capture.stderr do
+				Program::Daemon.new('DMS Test Daemon', version) do
+					main do |s|
+					end
+				end
+			end
+
+			out.should =~ /DMS Test Daemon done/
+		end
+
+		it 'should log program name done on error' do
+			out = Capture.stderr do
+				expect {
+					Program::Daemon.new('DMS Test Daemon', version) do
+						main do |s|
+							raise
+						end
+					end
+				}.to raise_error RuntimeError
+			end
+
+			out.should =~ /DMS Test Daemon done/
+		end
+
 		it 'should allow validation of settings' do
 			settings = nil
 			out = Capture.stderr do

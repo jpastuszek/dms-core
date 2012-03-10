@@ -27,8 +27,14 @@ class Program
 
 	class Main
 		def initialize(class_name, settings, &block)
+			Logging.logger.root.level = :debug if settings.debug 
 			logging_class_name class_name
-			instance_exec settings, &block
+
+			log.info "Starting #{settings.program_name} version #{settings.version} (LibZMQ version #{settings.libzmq_version}, ffi-ruby version #{settings.libzmq_binding_version}); pid #{settings.pid}"
+
+				instance_exec settings, &block
+		ensure
+			log.info "#{settings.program_name} done"
 		end
 	end
 
@@ -82,13 +88,7 @@ class Program
 		settings.libzmq_binding_version = ZeroMQ.binding_version
 		settings.pid = Process.pid
 
-		Logging.logger.root.level = :debug if settings.debug
-
-		class_name = program_name.delete ' '
-		logging_class_name class_name
-		log.info "Starting #{settings.program_name} version #{settings.version} (LibZMQ version #{settings.libzmq_version}, ffi-ruby version #{settings.libzmq_binding_version}); pid #{settings.pid}"
-
-		Main.new(class_name, settings, &@main) if @main
+		Main.new(program_name.delete(' '), settings, &@main) if @main
 	end
 end
 
