@@ -36,6 +36,7 @@ class Program
 	class MainTool
 		def initialize(class_name, settings, &block)
 			@settings = settings
+			Logging.logger.root.appenders = Logging.appenders.stderr(:layout => Logging::Layouts.pattern(pattern: "%d - %m\n"))
 			Logging.logger.root.level = :debug if @settings.debug 
 			logging_class_name class_name
 

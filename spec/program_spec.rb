@@ -92,12 +92,24 @@ describe Program do
 	end
 
 	before :each do
+		# reset logging
 		Logging.logger.root.level = :info
+		Logging.logger.root.appenders = Logging.appenders.stderr(:layout => Logging::Layouts::Pattern.new)
 	end
 
 	describe Program::Tool do
 		subject do
 			Program::Tool
+		end
+
+		it 'should log in simplified format' do
+			Capture.stderr do
+				subject.new('DMS Test Daemon', version) do
+					main do |s|
+						log.info 'test'
+					end
+				end
+			end.should =~ /\d+-\d+-\d+ \d+:\d+:\d+ - test/
 		end
 		
 		it 'should log program name, version, zeromq version and pid only on debug level' do
