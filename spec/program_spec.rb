@@ -22,6 +22,24 @@ describe Program do
 		'0.0.0'
 	end
 
+	before :each do
+		Logging.logger.root.level = :info
+	end
+
+	describe Program::Tool do
+		it 'should log program name, version, zeromq version and pid only on debug level' do
+			Capture.stderr do
+				Program::Tool.new('DMS Test Tool', version) do
+				end
+			end.should_not =~ /DMS Test Tool version \d+\.\d+\.\d+ \(LibZMQ version \d+\.\d+\.\d+, ffi-ruby version \d+\.\d+\.\d+\); pid \d+/
+
+			Capture.stderr do
+				Program::Tool.new('DMS Test Tool', version, ['-d']) do
+				end
+			end.should =~ /DMS Test Tool version \d+\.\d+\.\d+ \(LibZMQ version \d+\.\d+\.\d+, ffi-ruby version \d+\.\d+\.\d+\); pid \d+/
+		end
+	end
+
 	describe Program::Daemon do
 		it 'should provide --version' do
 			Capture.stdout do
@@ -46,7 +64,14 @@ describe Program do
 			end.should include 'DMSTestDaemon : test'
 		end
 
-		it 'should log program name, version, zeromq version and pid and provide this values in settings' do
+		it 'should log program name, version, zeromq version ' do
+			Capture.stderr do
+				Program::Daemon.new('DMS Test Daemon', version) do
+				end
+			end.should =~ /Starting DMS Test Daemon version \d+\.\d+\.\d+ \(LibZMQ version \d+\.\d+\.\d+, ffi-ruby version \d+\.\d+\.\d+\); pid \d+/
+		end
+
+		it 'should provide program name, version, zeromq version and pid values in settings' do
 			settings = nil
 			Capture.stderr do
 				Program::Daemon.new('DMS Test Daemon', version) do
@@ -54,7 +79,7 @@ describe Program do
 						settings = s
 					end
 				end
-			end.should =~ /Starting DMS Test Daemon version \d+\.\d+\.\d+ \(LibZMQ version \d+\.\d+\.\d+, ffi-ruby version \d+\.\d+\.\d+\); pid \d+/
+			end
 
 			settings.program_name.should == 'DMS Test Daemon'
 			settings.version.should =~ /^\d+\.\d+\.\d+$/
@@ -125,7 +150,6 @@ describe Program do
 
 		it 'should set up logging' do
 			settings = nil
-			Logging.logger.root.level.should == 1
 
 			Capture.stderr do
 				Program::Daemon.new('DMS Test Daemon', version, ['-d']) do

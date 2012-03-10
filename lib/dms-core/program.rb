@@ -20,12 +20,36 @@ require 'cli'
 
 class Program
 	class Tool < Program
+		def initialize(*args)
+			super
+			MainTool.new(@settings.program_name.delete(' '), @settings, &@main) if @main
+		end
 	end
 
 	class Daemon < Program
+		def initialize(*args)
+			super
+			MainDaemon.new(@settings.program_name.delete(' '), @settings, &@main) if @main
+		end
 	end
 
-	class Main
+	class MainTool
+		def initialize(class_name, settings, &block)
+			@settings = settings
+			Logging.logger.root.level = :debug if @settings.debug 
+			logging_class_name class_name
+
+			log.debug "#{@settings.program_name} version #{@settings.version} (LibZMQ version #{@settings.libzmq_version}, ffi-ruby version #{@settings.libzmq_binding_version}); pid #{@settings.pid}"
+
+			instance_exec @settings, &block
+		rescue Interrupt, SystemExit
+		rescue Exception => error
+			log.fatal 'got error', error
+			exit 2
+		end
+	end
+
+	class MainDaemon
 		def initialize(class_name, settings, &block)
 			@settings = settings
 			Logging.logger.root.level = :debug if @settings.debug 
@@ -34,7 +58,9 @@ class Program
 			log.info "Starting #{@settings.program_name} version #{@settings.version} (LibZMQ version #{@settings.libzmq_version}, ffi-ruby version #{@settings.libzmq_binding_version}); pid #{@settings.pid}"
 
 			instance_exec @settings, &block
-		rescue => error
+		rescue SystemExit
+			raise
+		rescue Exception => error
 			log.fatal 'got error', error
 			exit 2
 		ensure
@@ -57,10 +83,6 @@ class Program
 	include DSL
 
 	def initialize(program_name, version, argv = ARGV, &block)
-		@cli = nil
-		@validator = lambda{|s| }
-		@main = nil
-
 		dsl_method :cli do |&block|
 			@cli = CLI.new do
 				define_singleton_method(:console_connection) do
@@ -89,6 +111,8 @@ class Program
 		dsl &block
 
 		@cli ||= CLI.new
+		@validator ||= lambda{|s| }
+		@main  ||= lambda{|s| }
 
 		@cli.version version
 		
@@ -96,15 +120,13 @@ class Program
 				short: :d,
 				description: 'enable debugging'
 
-		settings = @cli.parse!(argv, &@validator)
+		@settings = @cli.parse!(argv, &@validator)
 
-		settings.program_name = program_name
-		settings.version = version
-		settings.libzmq_version = ZeroMQ.lib_version
-		settings.libzmq_binding_version = ZeroMQ.binding_version
-		settings.pid = Process.pid
-
-		Main.new(program_name.delete(' '), settings, &@main) if @main
+		@settings.program_name = program_name
+		@settings.version = version
+		@settings.libzmq_version = ZeroMQ.lib_version
+		@settings.libzmq_binding_version = ZeroMQ.binding_version
+		@settings.pid = Process.pid
 	end
 end
 
