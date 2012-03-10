@@ -24,7 +24,7 @@ describe Program do
 
 	describe Program::Daemon do
 		it 'should provide --version' do
-			out = Capture.stdout do
+			Capture.stdout do
 				Capture.stderr do
 					expect {
 						Program::Daemon.new('DMS Test Daemon', version, ['--version']) do
@@ -33,34 +33,29 @@ describe Program do
 						end
 					}.to raise_error SystemExit
 				end
-			end
-
-			out.should =~ /version "0.0.0"/
+			end.should include 'version "0.0.0"'
 		end
 
 		it 'should set logging class name to match program name' do
-			out = Capture.stderr do
+			Capture.stderr do
 				Program::Daemon.new('DMS Test Daemon', version) do
 					main do |s|
 						log.info 'test'
 					end
 				end
-			end
-
-			out.should =~ /DMSTestDaemon : test/
+			end.should include 'DMSTestDaemon : test'
 		end
 
 		it 'should log program name, version, zeromq version and pid and provide this values in settings' do
 			settings = nil
-			out = Capture.stderr do
+			Capture.stderr do
 				Program::Daemon.new('DMS Test Daemon', version) do
 					main do |s|
 						settings = s
 					end
 				end
-			end
+			end.should =~ /Starting DMS Test Daemon version \d+\.\d+\.\d+ \(LibZMQ version \d+\.\d+\.\d+, ffi-ruby version \d+\.\d+\.\d+\); pid \d+/
 
-			out.should =~ /Starting DMS Test Daemon version \d+\.\d+\.\d+ \(LibZMQ version \d+\.\d+\.\d+, ffi-ruby version \d+\.\d+\.\d+\); pid \d+/
 			settings.program_name.should == 'DMS Test Daemon'
 			settings.version.should =~ /^\d+\.\d+\.\d+$/
 			settings.libzmq_version.should =~ /^\d+\.\d+\.\d+$/
@@ -86,18 +81,16 @@ describe Program do
 		end
 
 		it 'should log program name done at exit' do
-			out = Capture.stderr do
+			Capture.stderr do
 				Program::Daemon.new('DMS Test Daemon', version) do
 					main do |s|
 					end
 				end
-			end
-
-			out.should =~ /DMS Test Daemon done/
+			end.should include 'DMS Test Daemon done'
 		end
 
 		it 'should log program name done on error' do
-			out = Capture.stderr do
+			Capture.stderr do
 				expect {
 					Program::Daemon.new('DMS Test Daemon', version) do
 						main do |s|
@@ -105,34 +98,26 @@ describe Program do
 						end
 					end
 				}.to raise_error RuntimeError
-			end
-
-			out.should =~ /DMS Test Daemon done/
+			end.should include 'DMS Test Daemon done'
 		end
 
 		it 'should allow validation of settings' do
-			settings = nil
-			out = Capture.stderr do
+			Capture.stderr do
 				expect {
 					Program::Daemon.new('DMS Test Daemon', version) do
-						cli do 
-						end
-
 						validate do |settings|
 							raise 'test'
 						end
 					end
 				}.to raise_error SystemExit
-			end
-
-			out.should =~ /Error: test/
+			end.should include 'Error: test'
 		end
 
 		it 'should set up logging' do
 			settings = nil
 			Logging.logger.root.level.should == 1
 
-			out = Capture.stderr do
+			Capture.stderr do
 				Program::Daemon.new('DMS Test Daemon', version, ['-d']) do
 					main do |s|
 						settings = s
@@ -147,7 +132,7 @@ describe Program do
 		it 'should have console_connection cli generator' do
 			settings = nil
 
-			out = Capture.stderr do
+			Capture.stderr do
 				Program::Daemon.new('DMS Test Daemon', version) do
 					cli do
 						console_connection
