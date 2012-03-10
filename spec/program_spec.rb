@@ -17,6 +17,75 @@
 
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
+shared_examples :program do
+	it 'should provide --version' do
+		Capture.stdout do
+			Capture.stderr do
+				expect {
+					subject.new('DMS Test Daemon', version, ['--version']) do
+						main do |s|
+						end
+					end
+				}.to raise_error SystemExit
+			end
+		end.should include 'version "0.0.0"'
+	end
+
+	it 'should log startup errors' do
+		Capture.stderr do
+			expect {
+				subject.new('DMS Test Daemon', version) do
+					main do |s|
+						raise 'test'
+					end
+				end
+			}.to raise_error SystemExit
+		end.should include 'got error: RuntimeError: test'
+	end
+
+	it 'exit with 2 on startup errors' do
+		Capture.stderr do
+			expect {
+				subject.new('DMS Test Daemon', version) do
+					main do |s|
+						raise 'test'
+					end
+				end
+			}.to raise_error { |error| 
+				error.should be_a SystemExit
+				error.status.should == 2
+			}
+		end
+	end
+
+	it 'should allow validation of settings' do
+		Capture.stderr do
+			expect {
+				subject.new('DMS Test Daemon', version) do
+					validate do |settings|
+						raise 'test'
+					end
+				end
+			}.to raise_error SystemExit
+		end.should include 'Error: test'
+	end
+
+	it 'should set up logging' do
+		settings = nil
+
+		Capture.stderr do
+			subject.new('DMS Test Daemon', version, ['-d']) do
+				main do |s|
+					settings = s
+				end
+			end
+		end
+
+		settings.debug.should be_true
+		Logging.logger.root.level.should == 0
+	end
+end
+
 describe Program do
 	let :version do
 		'0.0.0'
@@ -27,36 +96,33 @@ describe Program do
 	end
 
 	describe Program::Tool do
+		subject do
+			Program::Tool
+		end
+		
 		it 'should log program name, version, zeromq version and pid only on debug level' do
 			Capture.stderr do
-				Program::Tool.new('DMS Test Tool', version) do
+				subject.new('DMS Test Tool', version) do
 				end
 			end.should_not =~ /DMS Test Tool version \d+\.\d+\.\d+ \(LibZMQ version \d+\.\d+\.\d+, ffi-ruby version \d+\.\d+\.\d+\); pid \d+/
 
 			Capture.stderr do
-				Program::Tool.new('DMS Test Tool', version, ['-d']) do
+				subject.new('DMS Test Tool', version, ['-d']) do
 				end
 			end.should =~ /DMS Test Tool version \d+\.\d+\.\d+ \(LibZMQ version \d+\.\d+\.\d+, ffi-ruby version \d+\.\d+\.\d+\); pid \d+/
 		end
+
+		it_behaves_like :program
 	end
 
 	describe Program::Daemon do
-		it 'should provide --version' do
-			Capture.stdout do
-				Capture.stderr do
-					expect {
-						Program::Daemon.new('DMS Test Daemon', version, ['--version']) do
-							main do |s|
-							end
-						end
-					}.to raise_error SystemExit
-				end
-			end.should include 'version "0.0.0"'
+		subject do
+			Program::Daemon
 		end
-
+		
 		it 'should set logging class name to match program name' do
 			Capture.stderr do
-				Program::Daemon.new('DMS Test Daemon', version) do
+				subject.new('DMS Test Daemon', version) do
 					main do |s|
 						log.info 'test'
 					end
@@ -66,7 +132,7 @@ describe Program do
 
 		it 'should log program name, version, zeromq version ' do
 			Capture.stderr do
-				Program::Daemon.new('DMS Test Daemon', version) do
+				subject.new('DMS Test Daemon', version) do
 				end
 			end.should =~ /Starting DMS Test Daemon version \d+\.\d+\.\d+ \(LibZMQ version \d+\.\d+\.\d+, ffi-ruby version \d+\.\d+\.\d+\); pid \d+/
 		end
@@ -74,7 +140,7 @@ describe Program do
 		it 'should provide program name, version, zeromq version and pid values in settings' do
 			settings = nil
 			Capture.stderr do
-				Program::Daemon.new('DMS Test Daemon', version) do
+				subject.new('DMS Test Daemon', version) do
 					main do |s|
 						settings = s
 					end
@@ -90,7 +156,7 @@ describe Program do
 
 		it 'should log program name done at exit' do
 			Capture.stderr do
-				Program::Daemon.new('DMS Test Daemon', version) do
+				subject.new('DMS Test Daemon', version) do
 					main do |s|
 					end
 				end
@@ -100,7 +166,7 @@ describe Program do
 		it 'should log program name done on error' do
 			Capture.stderr do
 				expect {
-					Program::Daemon.new('DMS Test Daemon', version) do
+					subject.new('DMS Test Daemon', version) do
 						main do |s|
 							raise
 						end
@@ -109,65 +175,11 @@ describe Program do
 			end.should include 'DMS Test Daemon done'
 		end
 
-		it 'should log startup errors' do
-			Capture.stderr do
-				expect {
-					Program::Daemon.new('DMS Test Daemon', version) do
-						main do |s|
-							raise 'test'
-						end
-					end
-				}.to raise_error SystemExit
-			end.should include 'got error: RuntimeError: test'
-		end
-
-		it 'exit with 2 on startup errors' do
-			Capture.stderr do
-				expect {
-					Program::Daemon.new('DMS Test Daemon', version) do
-						main do |s|
-							raise 'test'
-						end
-					end
-				}.to raise_error { |error| 
-					error.should be_a SystemExit
-					error.status.should == 2
-				}
-			end
-		end
-
-		it 'should allow validation of settings' do
-			Capture.stderr do
-				expect {
-					Program::Daemon.new('DMS Test Daemon', version) do
-						validate do |settings|
-							raise 'test'
-						end
-					end
-				}.to raise_error SystemExit
-			end.should include 'Error: test'
-		end
-
-		it 'should set up logging' do
-			settings = nil
-
-			Capture.stderr do
-				Program::Daemon.new('DMS Test Daemon', version, ['-d']) do
-					main do |s|
-						settings = s
-					end
-				end
-			end
-
-			settings.debug.should be_true
-			Logging.logger.root.level.should == 0
-		end
-
 		it 'should have console_connection cli generator' do
 			settings = nil
 
 			Capture.stderr do
-				Program::Daemon.new('DMS Test Daemon', version) do
+				subject.new('DMS Test Daemon', version) do
 					cli do
 						console_connection
 					end
@@ -181,55 +193,57 @@ describe Program do
 			settings.console_subscriber.should == 'tcp://127.0.0.1:12000'
 			settings.console_publisher.should == 'tcp://127.0.0.1:12001'
 		end
-	end
 
-	describe '#main_loop' do
-		it 'should log ready on #main_loop' do
-			Capture.stderr do
-				Program::Daemon.new('DMS Test Daemon', version) do
-					main do |s|
-					end
-				end
-			end.should_not include 'ready'
+		it_behaves_like :program
 
-			Capture.stderr do
-				Program::Daemon.new('DMS Test Daemon', version) do
-					main do |s|
-						main_loop do
+		describe '#main_loop' do
+			it 'should log ready on #main_loop' do
+				Capture.stderr do
+					subject.new('DMS Test Daemon', version) do
+						main do |s|
 						end
 					end
-				end
-			end.should include 'ready'
-		end
+				end.should_not include 'ready'
 
-		it 'should capture exceptions and log them' do
-			Capture.stderr do
-				expect {
-					Program::Daemon.new('DMS Test Daemon', version) do
+				Capture.stderr do
+					subject.new('DMS Test Daemon', version) do
 						main do |s|
 							main_loop do
-								raise 'test'
 							end
 						end
 					end
-				}.to raise_error SystemExit
-			end.should include 'got error: RuntimeError: test'
-		end
+				end.should include 'ready'
+			end
 
-		it 'exit with 3 on startup errors' do
-			Capture.stderr do
-				expect {
-					Program::Daemon.new('DMS Test Daemon', version) do
-						main do |s|
-							main_loop do
-								raise 'test'
+			it 'should capture exceptions and log them' do
+				Capture.stderr do
+					expect {
+						subject.new('DMS Test Daemon', version) do
+							main do |s|
+								main_loop do
+									raise 'test'
+								end
 							end
 						end
-					end
-				}.to raise_error { |error| 
-					error.should be_a SystemExit
-					error.status.should == 3
-				}
+					}.to raise_error SystemExit
+				end.should include 'got error: RuntimeError: test'
+			end
+
+			it 'exit with 3 on startup errors' do
+				Capture.stderr do
+					expect {
+						subject.new('DMS Test Daemon', version) do
+							main do |s|
+								main_loop do
+									raise 'test'
+								end
+							end
+						end
+					}.to raise_error { |error| 
+						error.should be_a SystemExit
+						error.status.should == 3
+					}
+				end
 			end
 		end
 	end
