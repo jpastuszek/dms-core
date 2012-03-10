@@ -68,6 +68,23 @@ describe Program do
 			settings.pid.should be_a Integer
 		end
 
+		it 'should log ready on #ready' do
+			Capture.stderr do
+				Program::Daemon.new('DMS Test Daemon', version) do
+					main do |s|
+					end
+				end
+			end.should_not include 'ready'
+
+			Capture.stderr do
+				Program::Daemon.new('DMS Test Daemon', version) do
+					main do |s|
+						ready
+					end
+				end
+			end.should include 'ready'
+		end
+
 		it 'should log program name done at exit' do
 			out = Capture.stderr do
 				Program::Daemon.new('DMS Test Daemon', version) do

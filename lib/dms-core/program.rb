@@ -27,14 +27,19 @@ class Program
 
 	class Main
 		def initialize(class_name, settings, &block)
-			Logging.logger.root.level = :debug if settings.debug 
+			@settings = settings
+			Logging.logger.root.level = :debug if @settings.debug 
 			logging_class_name class_name
 
-			log.info "Starting #{settings.program_name} version #{settings.version} (LibZMQ version #{settings.libzmq_version}, ffi-ruby version #{settings.libzmq_binding_version}); pid #{settings.pid}"
+			log.info "Starting #{@settings.program_name} version #{@settings.version} (LibZMQ version #{@settings.libzmq_version}, ffi-ruby version #{@settings.libzmq_binding_version}); pid #{@settings.pid}"
 
-				instance_exec settings, &block
+				instance_exec @settings, &block
 		ensure
-			log.info "#{settings.program_name} done"
+			log.info "#{@settings.program_name} done"
+		end
+
+		def ready
+			log.info "#{@settings.program_name} ready"
 		end
 	end
 
