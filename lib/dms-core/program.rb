@@ -97,6 +97,17 @@ class Program
 						default: 'tcp://127.0.0.1:12001'
 				end
 
+				define_singleton_method(:internal_console_connection) do
+					option :internal_console_subscriber,
+						short: :i, 
+						description: 'ZeroMQ adderss of console connector for console programs - subscriber', 
+						default: 'ipc:///tmp/dms-console-connector-sub'
+					option :internal_console_publisher,
+						short: :I, 
+						description: 'ZeroMQ adderss of console connector for console programs - publisher', 
+						default: 'ipc:///tmp/dms-console-connector-pub'
+				end
+
 				instance_eval &block
 			end
 		end

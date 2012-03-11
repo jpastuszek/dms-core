@@ -206,6 +206,25 @@ describe Program do
 			settings.console_publisher.should == 'tcp://127.0.0.1:12001'
 		end
 
+		it 'should have internal_console_connection cli generator' do
+			settings = nil
+
+			Capture.stderr do
+				subject.new('DMS Test Daemon', version) do
+					cli do
+						internal_console_connection
+					end
+					
+					main do |s|
+						settings = s
+					end
+				end
+			end
+
+			settings.internal_console_subscriber.should == 'ipc:///tmp/dms-console-connector-sub'
+			settings.internal_console_publisher.should == 'ipc:///tmp/dms-console-connector-pub'
+		end
+
 		it_behaves_like :program
 
 		describe '#main_loop' do
