@@ -178,6 +178,62 @@ shared_examples :program do
 		settings.libzmq_version.should =~ /^\d+\.\d+\.\d+$/
 		settings.libzmq_binding_version.should =~ /^\d+\.\d+\.\d+$/
 	end
+
+	it 'should have console_connection cli generator' do
+		settings = nil
+
+		Capture.stderr do
+			subject.new('DMS Test Daemon', version) do
+				cli do
+					console_connection
+				end
+				
+				main do |s|
+					settings = s
+				end
+			end
+		end
+
+		settings.console_subscriber.should == 'tcp://127.0.0.1:12000'
+		settings.console_publisher.should == 'tcp://127.0.0.1:12001'
+	end
+
+	it 'should have internal_console_connection cli generator' do
+		settings = nil
+
+		Capture.stderr do
+			subject.new('DMS Test Daemon', version) do
+				cli do
+					internal_console_connection
+				end
+				
+				main do |s|
+					settings = s
+				end
+			end
+		end
+
+		settings.internal_console_subscriber.should == 'ipc:///tmp/dms-console-connector-sub'
+		settings.internal_console_publisher.should == 'ipc:///tmp/dms-console-connector-pub'
+	end
+
+	it 'should have linger cli generator' do
+		settings = nil
+
+		Capture.stderr do
+			subject.new('DMS Test Daemon', version) do
+				cli do
+					linger_time
+				end
+				
+				main do |s|
+					settings = s
+				end
+			end
+		end
+
+		settings.linger_time.should == 10
+	end
 end
 
 describe Program do
@@ -262,44 +318,6 @@ describe Program do
 					end
 				}.to raise_error SystemExit
 			end.should include 'DMS Test Daemon done'
-		end
-
-		it 'should have console_connection cli generator' do
-			settings = nil
-
-			Capture.stderr do
-				subject.new('DMS Test Daemon', version) do
-					cli do
-						console_connection
-					end
-					
-					main do |s|
-						settings = s
-					end
-				end
-			end
-
-			settings.console_subscriber.should == 'tcp://127.0.0.1:12000'
-			settings.console_publisher.should == 'tcp://127.0.0.1:12001'
-		end
-
-		it 'should have internal_console_connection cli generator' do
-			settings = nil
-
-			Capture.stderr do
-				subject.new('DMS Test Daemon', version) do
-					cli do
-						internal_console_connection
-					end
-					
-					main do |s|
-						settings = s
-					end
-				end
-			end
-
-			settings.internal_console_subscriber.should == 'ipc:///tmp/dms-console-connector-sub'
-			settings.internal_console_publisher.should == 'ipc:///tmp/dms-console-connector-pub'
 		end
 
 		it_behaves_like :program

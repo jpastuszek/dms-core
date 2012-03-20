@@ -109,6 +109,14 @@ class Program
 						default: 'ipc:///tmp/dms-console-connector-pub'
 				end
 
+				define_singleton_method(:linger_time) do
+					option :linger_time,
+						short: :L,
+						cast: Integer,
+						description: 'seconds to wait for outstanding messages to be sent out before exiting',
+						default: 10
+				end
+
 				instance_eval &block
 			end
 		end
