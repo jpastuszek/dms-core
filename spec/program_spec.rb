@@ -217,7 +217,7 @@ shared_examples :program do
 		settings.internal_console_publisher.should == 'ipc:///tmp/dms-console-connector-pub'
 	end
 
-	it 'should have linger cli generator' do
+	it 'should have linger_time cli generator' do
 		settings = nil
 
 		Capture.stderr do
@@ -233,6 +233,24 @@ shared_examples :program do
 		end
 
 		settings.linger_time.should == 10
+	end
+
+	it 'should have hello_wait cli generator' do
+		settings = nil
+
+		Capture.stderr do
+			subject.new('DMS Test Daemon', version) do
+				cli do
+					hello_wait
+				end
+				
+				main do |s|
+					settings = s
+				end
+			end
+		end
+
+		settings.hello_wait.should == 4
 	end
 end
 

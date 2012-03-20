@@ -117,6 +117,14 @@ class Program
 						default: 10
 				end
 
+				define_singleton_method(:hello_wait) do
+					option :hello_wait,
+						short: :w,
+						cast: Float,
+						description: 'wait given number of seconds for Hello message',
+						default: 4
+				end
+
 				instance_eval &block
 			end
 		end
