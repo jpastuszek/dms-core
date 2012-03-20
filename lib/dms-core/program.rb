@@ -17,6 +17,7 @@
 
 require 'dms-core'
 require 'cli'
+require 'facter'
 
 class Program
 	class Tool < Program
@@ -135,10 +136,13 @@ class Program
 		@settings = @cli.parse!(argv, &@validator)
 
 		@settings.program_name = program_name
+		@settings.program = program_name.downcase.tr ' ', '-'
+		@settings.pid = Process.pid
+		@settings.host_name = Facter.fqdn
+		@settings.program_id = "#{@settings.program}:#{@settings.host_name}:#{@settings.pid}"
 		@settings.version = version
 		@settings.libzmq_version = ZeroMQ.lib_version
 		@settings.libzmq_binding_version = ZeroMQ.binding_version
-		@settings.pid = Process.pid
 	end
 end
 

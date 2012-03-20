@@ -84,6 +84,100 @@ shared_examples :program do
 		settings.debug.should be_true
 		Logging.logger.root.level.should == 0
 	end
+
+	it 'should provide program name in settings' do
+		settings = nil
+		Capture.stderr do
+			subject.new('DMS Test Daemon', version) do
+				main do |s|
+					settings = s
+				end
+			end
+		end
+
+		settings.program_name.should == 'DMS Test Daemon'
+	end
+
+	it 'should provide short program name in settings' do
+		settings = nil
+
+		Capture.stderr do
+			subject.new('DMS Test Daemon', version, ['-d']) do
+				main do |s|
+					settings = s
+				end
+			end
+		end
+
+		settings.program.should == 'dms-test-daemon'
+	end
+
+	it 'should provide pid in settings' do
+		settings = nil
+		Capture.stderr do
+			subject.new('DMS Test Daemon', version) do
+				main do |s|
+					settings = s
+				end
+			end
+		end
+
+		settings.pid.should be_a Integer
+	end
+
+	it 'should provide host name in settings' do
+		settings = nil
+		Capture.stderr do
+			subject.new('DMS Test Daemon', version) do
+				main do |s|
+					settings = s
+				end
+			end
+		end
+
+		settings.host_name.should == Facter.fqdn
+	end
+	
+	it 'should provide unique program idetifier in settings' do
+		settings = nil
+
+		Capture.stderr do
+			subject.new('DMS Test Daemon', version, ['-d']) do
+				main do |s|
+					settings = s
+				end
+			end
+		end
+
+		settings.program_id.should == "dms-test-daemon:#{Facter.fqdn}:#{Process.pid}"
+	end
+
+	it 'should provide version in settings' do
+		settings = nil
+		Capture.stderr do
+			subject.new('DMS Test Daemon', version) do
+				main do |s|
+					settings = s
+				end
+			end
+		end
+
+		settings.version.should =~ /^\d+\.\d+\.\d+$/
+	end
+
+	it 'should provide zeromq versions in settings' do
+		settings = nil
+		Capture.stderr do
+			subject.new('DMS Test Daemon', version) do
+				main do |s|
+					settings = s
+				end
+			end
+		end
+
+		settings.libzmq_version.should =~ /^\d+\.\d+\.\d+$/
+		settings.libzmq_binding_version.should =~ /^\d+\.\d+\.\d+$/
+	end
 end
 
 describe Program do
@@ -147,23 +241,6 @@ describe Program do
 				subject.new('DMS Test Daemon', version) do
 				end
 			end.should =~ /Starting DMS Test Daemon version \d+\.\d+\.\d+ \(LibZMQ version \d+\.\d+\.\d+, ffi-ruby version \d+\.\d+\.\d+\); pid \d+/
-		end
-
-		it 'should provide program name, version, zeromq version and pid values in settings' do
-			settings = nil
-			Capture.stderr do
-				subject.new('DMS Test Daemon', version) do
-					main do |s|
-						settings = s
-					end
-				end
-			end
-
-			settings.program_name.should == 'DMS Test Daemon'
-			settings.version.should =~ /^\d+\.\d+\.\d+$/
-			settings.libzmq_version.should =~ /^\d+\.\d+\.\d+$/
-			settings.libzmq_binding_version.should =~ /^\d+\.\d+\.\d+$/
-			settings.pid.should be_a Integer
 		end
 
 		it 'should log program name done at exit' do
