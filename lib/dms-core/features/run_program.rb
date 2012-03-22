@@ -54,7 +54,7 @@ class RunProgram
 
 	def wait
 		Process.waitpid(@pid)
-		self
+		$?.exitstatus
 	end
 end
 

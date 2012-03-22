@@ -15,7 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Distributed Monitoring System.  If not, see <http://www.gnu.org/licenses/>.
 
-require 'dms-core/features/run_program'
-require 'dms-core/features/temp'
-require 'dms-core/features/steps'
+require 'tmpdir'
+
+def temp_dir(name)
+	dir = Pathname.new(Dir.mktmpdir(name))
+
+	at_exit do
+		dir.rmtree
+	end
+
+	dir
+end
 
