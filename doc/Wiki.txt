@@ -1,0 +1,205 @@
+h1. Key design features
+
+h2. Scalability
+
+* reduce network traffic with use of local storage
+* spread data processing load on all nodes
+* enable key components to work as many instances in parallel
+* customizable component layout
+* support of tiered multiplatform setup with use of proxies
+
+h2. Performance
+
+* reduce I/O load with use of write optimized storage - log-structured storage
+* reduce CPU usage with use of bulk probing - one probe run can return many values
+* asynchronous operation with use of 0MQ
+
+h2. Autoconfiguration
+
+* no static probe configuration - probe modules will autodetect all objects that can be probed and start collecting data automatically
+* no static host configuration - host will joint the network on startup and provide data and send events automatically
+* configuration compatible with configuration management software like Puppet, Chef or CFEngine
+
+h2. Dynamic data views
+
+* data dynamically grouped on graphs based on custom grouping criteria
+* graphs grouped dynamically based on multi dimensional regex selectors - ex. system load of all hosts that match name
+* custom data tagging and tag queries
+* support for mobile devices (iOS, Android browsers)
+
+h2. Realtime features
+
+* real time data streaming to graphs
+* boost probing rate for selected objects for realtime display
+
+h2. Flexible monitoring configuration
+
+!monitoring_configurations.png!
+
+h2. Flexible storage configuration
+
+!raw_data_storage_configurations.png!
+
+h1. High level design with 0MQ
+
+!hld-zmq.png!
+
+h1. Data types
+
+* RawDataPoint - probed value, time stamp when it was probed and RawDataKey identifying it
+* RawDataKey - Location - probed object location (e.g. host name), Path - object path, Component - identifies single value source from object
+* RawData - set of collected RawDataPoints
+* Data - processed and composed RawData values + time stamp pairs for single DataSet component
+* DataSet - set of Data that constitute single graph for given Type and TagSet
+* Type - describes unit, value range and other information needed to make a graph
+* DataSetQuery - matches DataSets to be provided to interested parties identified by QueryID
+* QueryID - query identifier used to filter incoming data with topic
+* Graph - visual representation of one or more DataSets of same Type
+* RawEvent - message describing some event
+* Event - correlated and assessed system event ready for distribution to people
+
+!data_types.png!
+
+h1. Abstract components
+
+h2. Console
+
+*console* allows user to browse collected data in graphical form, receive system events and notifications and browse their history.
+
+h2. Node
+
+*node* represents monitoring point where many monitored objects live or remote objects are being queried from.
+
+h2. Platform
+
+*platform* is a set of *nodes* connected to a single *proxy*.
+
+h1. Components
+
+h2. poller
+
+*poller* is responsible for scheduling RawDatum collection by *probes*, converting them to RawDataPoints by adding Time stamps and Location and pushing them to *data processor*.
+
+*probes* run within *poller* program.
+There is set of predefined *probes* for standard OS objects such as CPU, memory, network, disk usage etc.
+Custom *probe modules* can be installed that will provide new set of *probes* that can be scheduled within *poller*.
+Schedules, list of active modules and their configuration can be managed with *poller* configuration.
+
+h2. data processor
+
+It is responsible for:
+# pulling RawDataPoints from *pollers* and other components wishing to push RawDataPoints and storing them in *RawData storage*
+# providing Data from the *RawData storage* when queried
+# generating RawEvents when some Data criteria are met
+
+h2. RawData storage
+
+Persists RawDataPoints in sets of RawData chains.
+It is responsible for data statistical aggregation and retention.
+
+h2. proxy
+
+*proxy* aggregates communication with many *data processors* and communicates them with set of *consoles*.
+It is transparent (it does not filter or modify passed messages) and optional (*data processors* can bind to *consoles* directly).
+
+h2. *console endpoint*
+
+It acts as a communication hub between *data processors* (or *proxies*) and all *console* components.
+
+h2. *web application*
+
+Web application responsible for:
+# generating Queries and displaying QueryData in graphical form
+# displaying history of Events
+# providing RSS feed of Events
+
+h2. *event processor*
+
+It is responsible for storing RawEvents in *Event DB* and correlating them into Events that are next passed to *gateways* for distribution.
+
+h2. *Event DB*
+
+Database storing RawEvents and Events.
+
+h2. *gateways*
+
+Are responsible for delivering *Event* information to end user via different means (e-mail, XMPP message, SMS etc.)
+
+h2. *mongrel2*
+
+*web application* front end HTTP server. Serves static content and passes requests to the *web application*.
+
+h1. Component scalability
+
+h2. console (configuration)
+
+*platforms* have to be configured to connect with many *console endpoints*.
+All connected *platforms* will be querable.
+Events from *platforms* will be distributed to all connected *consoles*.
+This allows notification to be sent to different parties from different consoles.
+
+h3. mongrel2 (configuration)
+
+Adding *mongrel2* requires *web application* configuration change.
+Many *mongrel2* instances will PUSH requests to single *web application* backend and get topic response identified by instance ID.
+
+h3. web application
+
+Many instances can be started up without configuration change and they will bind in to *mongrel2* to get requests and to *console endpoint* to communicate with *data processors*.
+Queries sent by *web application* will be delivered to all *data processors*.
+QueryData will only get to query issuer with use of QueryID topic.
+
+h3. event processor
+
+Many *event processors* can be started against single *Event DB*.
+Upcoming events from *console endpoint* will be distributed equally.
+*event processor* will publish resulting Events to all configured *gateways*.
+
+h3. gateways (limited)
+
+There can be one *gateway* type per *event processor* but many *event processors* around single *Event DB*.
+
+h2. platform
+
+Many platforms can be started in parallel without configuration changes.
+
+h3. node
+
+Nodes can be started without any configuration changes.
+They will start getting Queries from *consoles* automatically.
+
+h3. poller
+
+There can be many *pollers* producing data to single *data processor* but they have to probe for different things or at different intervals to prevent data duplication.
+
+h3. data processor (single per storage)
+
+There can be only one *data processor* per *RawData storage* to prevent QueryData duplication on queries.
+The *data processor* can be shared with many *nodes* if nodes don't have local storage.
+
+h1. Data flow
+
+!data_flow.png!
+
+h1. Console ecosystem
+
+!console_ecosystem.png!
+
+h1. Data processor ecosystem
+
+!data_processor_ecosystem.png!
+
+h1. Component design
+
+# [[poller]]
+# [[data processor]]
+
+h1. Ideas
+
+* use GSL (GNU Scientific Library) vectors for statistics operations
+* Bitcask for storage http://basho.com/blog/technical/2010/04/27/hello-bitcask/
+* LevelDB https://github.com/wmorgan/leveldb-ruby
+* Redis http://redis.io/topics/faq
+* KyotoCabinet http://fallabs.com/kyotocabinet/rubydoc/
+* JSON and BSON http://bsonspec.org/#/specification for data serialization?
+
