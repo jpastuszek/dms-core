@@ -61,6 +61,14 @@ class ZeroMQ
 
 		def initialize(socket)
 			@socket = socket
+			begin
+				yield socket
+			rescue
+				close
+				raise
+			ensure
+				close unless @close_at_exit
+			end
 		end
 
 		attr_reader :socket
@@ -74,36 +82,26 @@ class ZeroMQ
 			ok? @socket.bind(address)
 			self
 		end
+
+		def close_at_exit
+			at_exit do
+				close
+			end
+			@close_at_exit = true
+		end
+
+		def close
+			ok? @socket.close unless @closed
+			@closed = true
+		end
+
+		def closed?
+			@closed
+		end
 	end
 
-	class Sender < Socket
-		class Publisher < Sender
-			def initialize(context, options = {})
-				have? socket = context.socket(ZMQ::PUB)
-				begin
-					super socket, options
-					yield self
-				ensure
-					ok? socket.close
-				end
-			end
-		end
-
-		class Pusher < Sender
-			def initialize(context, options = {})
-				have? socket = context.socket(ZMQ::PUSH)
-				begin
-					super socket, options
-					yield self
-				ensure
-					ok? socket.close
-				end
-			end
-		end
-
-		def initialize(socket, options = {})
-			super socket
-
+	module Sender
+		def sender_init(options)
 			ok? @socket.setsockopt(ZMQ::HWM, options[:hwm] || 1000)
 			ok? @socket.setsockopt(ZMQ::SWAP, options[:swap] || 0)
 			ok? @socket.setsockopt(ZMQ::SNDBUF, options[:buffer] || 0)
@@ -119,72 +117,12 @@ class ZeroMQ
 			flags = 0
 			flags |= ZMQ::SNDMORE if options[:more]
 			ok? @socket.send_string(string, flags)
+			self
 		end
 	end
 
-	class Receiver < Socket
-		class Subscriber < Receiver
-			def initialize(context, options = {})
-				have? socket = context.socket(ZMQ::SUB)
-				begin
-					super socket, options
-
-					@on_handlers = {}
-					yield self
-				ensure
-					ok? socket.close
-				end
-			end
-
-			def on(data_type, topic = '', &callback)
-				unless @on_handlers.has_key? data_type
-					@on_handlers[data_type] = {}
-
-					super data_type do |message, topic|
-						on_topic = @on_handlers[data_type]
-						if topic != '' and on_topic.has_key? topic
-							on_topic[topic].call(message, topic)
-						end
-
-						if on_topic.has_key? ''
-							on_topic[''].call(message, topic)
-						end
-					end
-				end
-
-				on_topic = @on_handlers[data_type]
-				subscribe(data_type, topic) unless on_topic.has_key? topic
-				on_topic[topic] = callback
-
-				self
-			end
-
-			def on_raw(&callback)
-				subscribe
-				super &callback
-			end
-
-			private
-
-			def subscribe(object = nil, topic = '')
-				ok? @socket.setsockopt(ZMQ::SUBSCRIBE, ! object ? '' : "#{object}/#{topic.empty? ? '' : topic + "\n"}")
-			end
-		end
-
-		class Puller < Receiver
-			def initialize(context, options = {})
-				have? socket = context.socket(ZMQ::PULL)
-				begin
-					super socket, options
-					yield self
-				ensure
-					ok? socket.close
-				end
-			end
-		end
-
-		def initialize(socket, options = {})
-			super socket
+	module Receiver
+		def receiver_init(options)
 			@data_type_callbacks = {}
 			@raw_callbacks = []
 			@othre_callbacks = []
@@ -231,6 +169,7 @@ class ZeroMQ
 					end
 				end
 			end while more?
+			self
 		end
 
 		private
@@ -246,64 +185,123 @@ class ZeroMQ
 		end
 	end
 
-	class SenderReceiver < Socket
-		class Reply < SenderReceiver
-			def initialize(context, options = {})
-				have? socket = context.socket(ZMQ::REP)
-				begin
-					super socket, options
-					yield self
-				ensure
-					ok? socket.close
-				end
+	class Publisher < Socket
+		include Sender
+		def initialize(context, options = {})
+			have? socket = context.socket(ZMQ::PUB)
+			super socket do
+				sender_init(options)
+				yield self
 			end
+		end
+	end
 
-			def on(data_type, &callback)
-				@receiver.on(data_type, &callback)
+	class Pusher < Socket
+		include Sender
+		def initialize(context, options = {})
+			have? socket = context.socket(ZMQ::PUSH)
+			super socket do
+				sender_init(options)
+				yield self
 			end
+		end
+	end
 
-			def receive!
-				@receiver.receive!
+	class Subscriber < Socket
+		include Receiver
+		def initialize(context, options = {})
+			have? socket = context.socket(ZMQ::SUB)
+			super socket do
+				receiver_init(options)
+				@on_handlers = {}
+				yield self
 			end
 		end
 
-		class Request < SenderReceiver
-			def initialize(context, options = {})
-				have? socket = context.socket(ZMQ::REQ)
-				begin
-					super socket, options
+		def on(data_type, topic = '', &callback)
+			unless @on_handlers.has_key? data_type
+				@on_handlers[data_type] = {}
 
-					@response_callback = nil
-
-					@receiver.on_other do |message|
-						@response_callback.call(message) if @response_callback
+				super data_type do |message, topic|
+					on_topic = @on_handlers[data_type]
+					if topic != '' and on_topic.has_key? topic
+						on_topic[topic].call(message, topic)
 					end
 
-					yield self
-				ensure
-					ok? socket.close
+					if on_topic.has_key? ''
+						on_topic[''].call(message, topic)
+					end
 				end
 			end
 
-			def send(data_type, options = {}, &callback)
-				@response_callback = callback
-				super data_type, options
-			end
-
-			def receive!
-				@receiver.receive!
-				@response_callback = nil
-			end
+			on_topic = @on_handlers[data_type]
+			subscribe(data_type, topic) unless on_topic.has_key? topic
+			on_topic[topic] = callback
+			self
 		end
 
-		def initialize(socket, options = {})
-			super socket
-			@sender = Sender.new(socket, options)
-			@receiver = Receiver.new(socket, options)
+		def on_raw(&callback)
+			subscribe
+			super &callback
+		end
+
+		private
+
+		def subscribe(object = nil, topic = '')
+			ok? @socket.setsockopt(ZMQ::SUBSCRIBE, ! object ? '' : "#{object}/#{topic.empty? ? '' : topic + "\n"}")
+			self
+		end
+	end
+
+	class Puller < Socket
+		include Receiver
+		def initialize(context, options = {})
+			have? socket = context.socket(ZMQ::PULL)
+			super socket do
+				receiver_init(options)
+				yield self
+			end
+		end
+	end
+
+	class Reply < Socket
+		include Receiver
+		include Sender
+		def initialize(context, options = {})
+			have? socket = context.socket(ZMQ::REP)
+			super socket do
+				sender_init(options)
+				receiver_init(options)
+				yield self
+			end
+		end
+	end
+
+	class Request < Socket
+		include Receiver
+		include Sender
+		def initialize(context, options = {})
+			have? socket = context.socket(ZMQ::REQ)
+			super socket do
+				sender_init(options)
+				receiver_init(options)
+				@response_callback = nil
+				on_other do |message|
+					@response_callback.call(message) if @response_callback
+				end
+				yield self
+			end
 		end
 
 		def send(data_type, options = {}, &callback)
-			@sender.send(data_type, options)
+			@response_callback = callback
+			super data_type, options
+			self
+		end
+
+		def receive!
+			super
+			@response_callback = nil
 			self
 		end
 	end
@@ -350,28 +348,49 @@ class ZeroMQ
 
 	def initialize
 		have? @context = ZMQ::Context.create(1)
-		begin
-			yield self
-		ensure
+		if block_given?
 			begin
-				ok? @context.terminate
-			rescue Interrupt
-				retry
-			rescue
+				yield self
+			ensure
+				terminate
+			end
+		else
+			at_exit do
+				terminate
 			end
 		end
 	end
 
+	def terminate
+		begin
+			ok? @context.terminate
+		rescue Interrupt
+			retry
+		rescue
+		end
+	end
+
 	# PUSH/PULL
-	def pull_bind(address, options = {}, &block)
-		Receiver::Puller.new(@context, options) do |pull|
-			pull.bind(address)
+	def pull_bind(address, options = {})
+		Puller.new(@context, options) do |socket|
+			socket.bind(address)
+			if block_given?
+				yield socket
+			else
+				socket.close_at_exit
+			end
+		end
+	end
+
+	def pull_connect(address, options = {}, &block)
+		Puller.new(@context, options) do |pull|
+			pull.connect(address)
 			yield pull
 		end
 	end
 
 	def push_connect(address, options = {}, &block)
-		Sender::Pusher.new(@context, options) do |push|
+		Pusher.new(@context, options) do |push|
 			push.connect(address)
 			yield push
 		end
@@ -379,14 +398,14 @@ class ZeroMQ
 
 	# REQ/REP
 	def rep_bind(address, options = {}, &block)
-		SenderReceiver::Reply.new(@context, options) do |rep|
+		Reply.new(@context, options) do |rep|
 			rep.bind(address)
 			yield rep
 		end
 	end
 
 	def req_connect(address, options = {}, &block)
-		SenderReceiver::Request.new(@context, options) do |req|
+		Request.new(@context, options) do |req|
 			req.connect(address)
 			yield req
 		end
@@ -394,28 +413,28 @@ class ZeroMQ
 
 	# PUB/SUB
 	def pub_bind(address, options = {}, &block)
-		Sender::Publisher.new(@context, options) do |pub|
+		Publisher.new(@context, options) do |pub|
 			pub.bind(address)
 			yield pub
 		end
 	end
 
 	def pub_connect(address, options = {}, &block)
-		Sender::Publisher.new(@context, options) do |pub|
+		Publisher.new(@context, options) do |pub|
 			pub.connect(address)
 			yield pub
 		end
 	end
 
 	def sub_bind(address, options = {})
-		Receiver::Subscriber.new(@context, options) do |sub|
+		Subscriber.new(@context, options) do |sub|
 			sub.bind(address)
 			yield sub
 		end
 	end
 
 	def sub_connect(address, options = {}, &block)
-		Receiver::Subscriber.new(@context, options) do |sub|
+		Subscriber.new(@context, options) do |sub|
 			sub.connect(address)
 			yield sub
 		end
