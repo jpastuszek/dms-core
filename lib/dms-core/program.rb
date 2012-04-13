@@ -23,14 +23,14 @@ class Program
 	class Tool < Program
 		def initialize(*args)
 			super
-			MainTool.new(@settings.program_name.delete(' '), @settings, &@main) if @main
+			MainTool.new(@settings.program_class_name, @settings, &@main) if @main
 		end
 	end
 
 	class Daemon < Program
 		def initialize(*args)
 			super
-			MainDaemon.new(@settings.program_name.delete(' '), @settings, &@main) if @main
+			MainDaemon.new(@settings.program_class_name, @settings, &@main) if @main
 		end
 	end
 
@@ -152,6 +152,7 @@ class Program
 		@settings = @cli.parse!(argv, &@validator)
 
 		@settings.program_name = program_name
+		@settings.program_class_name = @settings.program_name.delete(' ')
 		@settings.program = program_name.downcase.tr ' ', '-'
 		@settings.pid = Process.pid
 		@settings.host_name = Facter.fqdn
