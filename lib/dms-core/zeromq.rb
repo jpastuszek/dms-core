@@ -370,106 +370,22 @@ class ZeroMQ
 		end
 	end
 
-	# PUSH/PULL
-	def pull_bind(address, options = {})
-		Puller.new(@context, options) do |socket|
-			socket.bind(address)
-			if block_given?
-				yield socket
-			else
-				socket.close_at_exit
+	# all type_connect/bind method combinations
+	[:pull, :push, :rep, :req, :pub, :sub].zip(
+		[Puller, Pusher, Reply, Request, Publisher, Subscriber]
+	).product([:bind, :connect]).each do |type, bind|
+		eval """
+		def #{type.first}_#{bind}(address, options = {})
+			#{type.last}.new(@context, options) do |socket|
+				socket.#{bind}(address)
+				if block_given?
+					yield socket
+				else
+					socket.close_at_exit
+				end
 			end
 		end
-	end
-
-	def pull_connect(address, options = {}, &block)
-		Puller.new(@context, options) do |socket|
-			socket.connect(address)
-			if block_given?
-				yield socket
-			else
-				socket.close_at_exit
-			end
-		end
-	end
-
-	def push_connect(address, options = {}, &block)
-		Pusher.new(@context, options) do |socket|
-			socket.connect(address)
-			if block_given?
-				yield socket
-			else
-				socket.close_at_exit
-			end
-		end
-	end
-
-	# REQ/REP
-	def rep_bind(address, options = {}, &block)
-		Reply.new(@context, options) do |socket|
-			socket.bind(address)
-			if block_given?
-				yield socket
-			else
-				socket.close_at_exit
-			end
-		end
-	end
-
-	def req_connect(address, options = {}, &block)
-		Request.new(@context, options) do |socket|
-			socket.connect(address)
-			if block_given?
-				yield socket
-			else
-				socket.close_at_exit
-			end
-		end
-	end
-
-	# PUB/SUB
-	def pub_bind(address, options = {}, &block)
-		Publisher.new(@context, options) do |socket|
-			socket.bind(address)
-			if block_given?
-				yield socket
-			else
-				socket.close_at_exit
-			end
-		end
-	end
-
-	def pub_connect(address, options = {}, &block)
-		Publisher.new(@context, options) do |socket|
-			socket.connect(address)
-			if block_given?
-				yield socket
-			else
-				socket.close_at_exit
-			end
-		end
-	end
-
-	def sub_bind(address, options = {})
-		Subscriber.new(@context, options) do |socket|
-			socket.bind(address)
-			if block_given?
-				yield socket
-			else
-				socket.close_at_exit
-			end
-		end
-	end
-
-	def sub_connect(address, options = {}, &block)
-		Subscriber.new(@context, options) do |socket|
-			socket.connect(address)
-			if block_given?
-				yield socket
-			else
-				socket.close_at_exit
-			end
-		end
+		"""
 	end
 end
 
