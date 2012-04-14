@@ -15,14 +15,32 @@
 # You should have received a copy of the GNU General Public License
 # along with Distributed Monitoring System.  If not, see <http://www.gnu.org/licenses/>.
 
-require 'dms-core/logging'
-require 'dms-core/data_types'
-require 'dms-core/zeromq'
-require 'dms-core/zeromq_service'
-require 'dms-core/dsl'
-require 'dms-core/module_loader'
-require 'dms-core/bus'
-require 'dms-core/bus_responder'
-require 'dms-core/bus_detector'
-require 'dms-core/program'
+class ZeroMQServiceInstance
+	class SocketExistsError < ArgumentError
+		def initialize(name)
+			super "socket #{name} already exists"
+		end
+	end
+
+	def initialize
+		@zeromq = nil
+		@sockets = {}
+	end
+
+	def zeromq
+		@zeromq ||= ZeroMQ.new
+	end
+
+	def socket(name, &block)
+		@sockets.delete name if @sockets.member? name and @sockets[name].closed?
+
+		if block_given?
+			raise SocketExistsError, name if @sockets.member? name
+			@sockets[name] = yield zeromq
+		end
+		@sockets[name]
+	end
+end
+
+ZeroMQService ||= ZeroMQServiceInstance.new
 
