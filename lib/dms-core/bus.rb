@@ -17,18 +17,30 @@
 
 class Bus
 	def self.bind(context, publisher_address, subscriber_address, publisher_options = {}, subscriber_options = {})
-		context.sub_bind(subscriber_address, subscriber_options) do |sub|
-			context.pub_bind(publisher_address, publisher_options) do |pub|
-				yield self.new(sub, pub)
+		if block_given?
+			context.sub_bind(subscriber_address, subscriber_options) do |sub|
+				context.pub_bind(publisher_address, publisher_options) do |pub|
+					yield self.new(sub, pub)
+				end
 			end
+		else
+			sub = context.sub_bind(subscriber_address, subscriber_options)
+			pub = context.pub_bind(publisher_address, publisher_options)
+			self.new(sub, pub)
 		end
 	end
 
 	def self.connect(context, publisher_address, subscriber_address, publisher_options = {}, subscriber_options = {})
-		context.sub_connect(publisher_address, subscriber_options) do |sub|
-			context.pub_connect(subscriber_address, publisher_options) do |pub|
-				yield self.new(sub, pub)
+		if block_given?
+			context.sub_connect(publisher_address, subscriber_options) do |sub|
+				context.pub_connect(subscriber_address, publisher_options) do |pub|
+					yield self.new(sub, pub)
+				end
 			end
+		else
+			sub = context.sub_connect(publisher_address, subscriber_options)
+			pub = context.pub_connect(subscriber_address, publisher_options)
+			self.new(sub, pub)
 		end
 	end
 
@@ -59,6 +71,15 @@ class Bus
 
 	def receive!
 		@sub.receive!
+	end
+
+	def close
+		@sub.close
+		@pub.close
+	end
+
+	def closed?
+		@sub.closed? or @pub.closed?
 	end
 end
 

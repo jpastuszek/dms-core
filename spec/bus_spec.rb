@@ -26,6 +26,18 @@ describe Bus do
 		'ipc:///tmp/dms-core-test-pub'
 	end
 
+	it 'should work with ZeroMQService' do
+		ZeroMQService.socket(:bus) do |zmq|
+			zmq.bus_bind(publisher_address, subscriber_address)
+		end
+
+		b = ZeroMQService.socket(:bus)
+		b.should be_a Bus
+		b.should_not be_closed
+		b.close
+		b.should be_closed
+	end
+
 	context 'connect' do
 		it 'should allow sending objects' do
 			message = nil
