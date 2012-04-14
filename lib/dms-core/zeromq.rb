@@ -319,6 +319,11 @@ class ZeroMQ
 			@sockets[object.socket] = object
 		end
 
+		def deregister(object)
+			@poller.deregister_readable(object.socket)
+			@sockets.delete(object)
+		end
+
 		def poll(timeout = :blocking)
 			timeout *= 1000 unless timeout == :blocking or timeout == -1
 			ok? @poller.poll(timeout)

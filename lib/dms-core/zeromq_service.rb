@@ -31,12 +31,21 @@ class ZeroMQServiceInstance
 		@zeromq ||= ZeroMQ.new
 	end
 
+	def poller
+		@poller ||= ZeroMQ::Poller.new
+	end
+
 	def socket(name, &block)
-		@sockets.delete name if @sockets.member? name and @sockets[name].closed?
+		if socket = @sockets[name] and socket.closed?
+			poller.deregister(socket)
+			@sockets.delete name 
+		end
 
 		if block_given?
 			raise SocketExistsError, name if @sockets.member? name
-			@sockets[name] = yield zeromq
+			socket = yield zeromq
+			@sockets[name] = socket
+			poller << socket
 		end
 		@sockets[name]
 	end

@@ -26,6 +26,10 @@ describe 'ZeroMQService' do
 		ZeroMQService
 	end
 
+	it 'should provide shared poller' do
+		subject.poller.should be_a ZeroMQ::Poller
+	end
+
 	describe 'socket creation and access' do
 		it 'should allow creating socket via passed block' do
 			s = subject.socket(:test) do |zmq|
