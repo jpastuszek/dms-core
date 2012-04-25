@@ -312,6 +312,7 @@ class ZeroMQ
 		def initialize
 			@sockets = {}
 			@poller = ZMQ::Poller.new
+			@timers = {}
 		end
 
 		def <<(object)
@@ -335,18 +336,38 @@ class ZeroMQ
 			return true
 		end
 
+		def after(time, &callback)
+			@timers[Time.now + time] = callback
+		end
+
+		def process_timers
+			until @timers.empty?
+				timer = @timers.keys.sort.first
+				time_remaining = timer - Time.now
+
+				if time_remaining <= 0
+					@timers[timer].call
+					@timers.delete(timer)
+					return true
+				end
+
+				poll(time_remaining)
+			end
+			return false
+		end
+
 		def poll!(time = nil)
 			if time
-				end_time = Time.now + time
-				handled_messages = false
-				loop do
-					time_remaining = end_time - Time.now
-					return handled_messages if time_remaining <= 0
-					poll(time_remaining)
-					handled_messages = true
+				done = false
+				after(time) do
+					done = true
 				end
+
+				process_timers until done
 			else
-				loop{poll}
+				loop do
+					process_timers or poll
+				end
 			end
 		end
 	end
