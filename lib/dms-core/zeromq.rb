@@ -326,22 +326,11 @@ class ZeroMQ
 			@sockets.delete(object)
 		end
 
-		def poll(timeout = :blocking)
-			timeout *= 1000 unless timeout == :blocking or timeout == -1
-			ok? @poller.poll(timeout)
-			return false if @poller.readables.empty? and @poller.writables.empty?
-
-			@poller.readables.each do |socket|
-				@sockets[socket].receive!
-			end
-			return true
-		end
-
 		def after(time, &callback)
 			@timers[Time.now + time] = callback
 		end
 
-		def process_timers
+		def poll(timeout = nil)
 			until @timers.empty?
 				timer = @timers.keys.sort.first
 				time_remaining = timer - Time.now
@@ -349,12 +338,18 @@ class ZeroMQ
 				if time_remaining <= 0
 					@timers[timer].call
 					@timers.delete(timer)
-					return true
+					return :timer
 				end
 
-				poll(time_remaining)
+				break if timeout and timeout < time_remaining
+				poll_message(time_remaining) and return :message
 			end
-			return false
+
+			if poll_message(timeout)
+				return :message
+			else
+				return false
+			end
 		end
 
 		def poll!(time = nil)
@@ -364,12 +359,25 @@ class ZeroMQ
 					done = true
 				end
 
-				process_timers until done
+				poll until done
 			else
 				loop do
-					process_timers or poll
+					poll
 				end
 			end
+		end
+
+		private
+
+		def poll_message(timeout = nil)
+			timeout *= 1000 if timeout
+			ok? @poller.poll(timeout || :blocking)
+			return false if @poller.readables.empty? and @poller.writables.empty?
+
+			@poller.readables.each do |socket|
+				@sockets[socket].receive!
+			end
+			return true
 		end
 	end
 

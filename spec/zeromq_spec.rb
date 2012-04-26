@@ -454,5 +454,32 @@ describe ZeroMQ do
 			message.pid.should == 321
 		end
 	end
+
+	describe ZeroMQ::Poller do
+		it 'should support timers via #after method' do
+			ZeroMQ.new do |zmq|
+				poller = ZeroMQ::Poller.new
+				test = []
+
+				poller.after(0.01) do
+					test << 1
+				end
+
+				poller.after(0.02) do
+					test << 3
+				end
+
+				poller.after(0.01) do
+					test << 2
+				end
+
+				3.times do
+					poller.poll
+				end
+
+				test.should == [1, 2, 3]
+			end
+		end
+	end
 end
 
