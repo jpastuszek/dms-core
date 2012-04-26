@@ -236,6 +236,7 @@ class ZeroMQ
 
 			on_topic = @on_handlers[data_type]
 			subscribe(data_type, topic) unless on_topic.has_key? topic
+			# this allows only one data_type/topic pair callback to be set
 			on_topic[topic] = callback
 			self
 		end
