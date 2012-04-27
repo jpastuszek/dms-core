@@ -17,6 +17,7 @@
 
 require 'dms-core/data_type'
 require 'dms-core/tag'
+require 'multi_json'
 
 class DataSet < DataType
 	class ComponentData < Hash
@@ -81,6 +82,16 @@ class DataSet < DataType
 			body[:time_span] = @time_span
 			body[:component_data] = @component_data.to_transport
 		end
+	end
+	
+	def to_json
+		MultiJson.dump({
+			type_name: @type_name,
+			tag_set: @tag_set.to_s,
+			time_from: @time_from.to_f,
+			time_span: @time_span,
+			component_data: @component_data.to_transport,
+		})
 	end
 
 	def to_s
