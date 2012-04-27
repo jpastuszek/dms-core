@@ -310,10 +310,32 @@ class ZeroMQ
 	class Poller
 		include ZeroMQError
 
+		class Timers < Hash
+			def after(time, &callback)
+				self[Time.now + time] = callback
+			end
+
+			def time
+				return nil if empty?
+				keys.sort.first
+			end
+
+			def remaining
+				return nil if empty?
+				time - Time.now
+			end
+
+			def fire
+				return nil if empty?
+				self[time].call
+				delete(time)
+			end
+		end
+
 		def initialize
 			@sockets = {}
 			@poller = ZMQ::Poller.new
-			@timers = {}
+			@timers = Timers.new
 		end
 
 		def <<(object)
@@ -327,17 +349,15 @@ class ZeroMQ
 		end
 
 		def after(time, &callback)
-			@timers[Time.now + time] = callback
+			@timers.after(time, &callback)
 		end
 
 		def poll(timeout = nil)
-			until @timers.empty?
-				timer = @timers.keys.sort.first
-				time_remaining = timer - Time.now
+			while @timers.time
+				time_remaining = @timers.remaining
 
 				if time_remaining <= 0
-					@timers[timer].call
-					@timers.delete(timer)
+					@timers.fire
 					return :timer
 				end
 
