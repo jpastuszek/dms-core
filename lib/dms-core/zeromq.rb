@@ -17,6 +17,7 @@
 
 require 'ffi-rzmq'
 require 'ffi-rzmq/version'
+require 'set'
 
 module ZeroMQError
 	class OperationFailedError < IOError
@@ -310,25 +311,44 @@ class ZeroMQ
 	class Poller
 		include ZeroMQError
 
-		class Timers < Hash
+		class Timers < SortedSet
+			class Timer
+				def initialize(at, &callback)
+					@at = at
+					@callback = callback
+				end
+
+				attr_reader :at
+
+				def remaining
+					@at - Time.now
+				end
+
+				def call
+					@callback.call
+				end
+
+				def <=>(x)
+					@at <=> x.at
+				end
+			end
+
 			def after(time, &callback)
-				self[Time.now + time] = callback
+				self << Timer.new(Time.now + time, &callback)
 			end
 
-			def time
-				return nil if empty?
-				keys.sort.first
-			end
+			def wait
+				loop do
+					while timer = first and timer.remaining <= 0
+						timer.call
+						delete(timer)
+						return true
+					end
+					return false if empty?
 
-			def remaining
-				return nil if empty?
-				time - Time.now
-			end
-
-			def fire
-				return nil if empty?
-				self[time].call
-				delete(time)
+					# sleep
+					yield first.remaining
+				end
 			end
 		end
 
@@ -353,17 +373,10 @@ class ZeroMQ
 		end
 
 		def poll(timeout = nil)
-			while @timers.time
-				time_remaining = @timers.remaining
-
-				if time_remaining <= 0
-					@timers.fire
-					return :timer
-				end
-
+			@timers.wait do |time_remaining|
 				break if timeout and timeout < time_remaining
 				poll_message(time_remaining) and return :message
-			end
+			end and return :timer
 
 			if poll_message(timeout)
 				return :message
