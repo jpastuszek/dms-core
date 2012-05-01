@@ -31,8 +31,7 @@ class DataSet < DataType
 			each_pair do |component, data|
 				new_data = (transport[component] = [])
 				data.map do |time, value|
-					new_data << time.to_f
-					new_data << value
+					new_data << [time.to_f, value]
 				end
 			end
 
@@ -67,7 +66,7 @@ class DataSet < DataType
 			message[:time_span]
 		) do
 			message[:component_data].each_pair do |component, data|
-				data.each_slice(2) do |time, value|
+				data.each do |time, value|
 					component_data component, time, value
 				end
 			end

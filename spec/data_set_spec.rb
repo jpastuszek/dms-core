@@ -63,9 +63,9 @@ describe DataSet do
 		m[:time_from].should == 100
 		m[:time_span].should == 100.0
 		m[:component_data].should include('free')
-		m[:component_data]['free'].should == [1.0, 1234, 2.0, 1235]
+		m[:component_data]['free'].should == [[1.0, 1234], [2.0, 1235]]
 		m[:component_data].should include('used')
-		m[:component_data]['used'].should == [1.0, 3452, 2.0, 3451]
+		m[:component_data]['used'].should == [[1.0, 3452], [2.0, 3451]]
 
 		expect {
 			m.to_s
@@ -97,7 +97,7 @@ describe DataSet do
 	end
 
 	it 'can be converted to JSON' do
-		subject.to_json.should == '{"type_name":"memory","tag_set":"location:magi, system:memory","time_from":100.0,"time_span":100.0,"component_data":{"free":[1.0,1234,2.0,1235],"used":[1.0,3452,2.0,3451]}}'
+		subject.to_json.should == '{"type_name":"memory","tag_set":"location:magi, system:memory","time_from":100.0,"time_span":100.0,"component_data":{"free":[[1.0,1234],[2.0,1235]],"used":[[1.0,3452],[2.0,3451]]}}'
 	end
 end
 
