@@ -38,6 +38,19 @@ class DataSet < DataType
 			transport
 		end
 
+		def to_json
+			transport = {}
+
+			each_pair do |component, data|
+				new_data = (transport[component] = [])
+				data.map do |time, value|
+					new_data << [Integer(time.to_f * 1000), value]
+				end
+			end
+
+			transport
+		end
+
 		def component_data(name, time, value)
 			data = (self[name.to_s] ||= [])
 			data << [DataType.to_time(time), value]
@@ -89,7 +102,7 @@ class DataSet < DataType
 			tag_set: @tag_set.to_s,
 			time_from: @time_from.to_f,
 			time_span: @time_span,
-			component_data: @component_data.to_transport,
+			component_data: @component_data.to_json,
 		})
 	end
 
