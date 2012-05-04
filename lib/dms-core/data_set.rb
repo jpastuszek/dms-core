@@ -44,7 +44,7 @@ class DataSet < DataType
 			each_pair do |component, data|
 				new_data = (transport[component] = [])
 				data.map do |time, value|
-					new_data << [Integer(time.to_f * 1000), value]
+					new_data.unshift [Integer(time.to_f * 1000), value]
 				end
 			end
 
