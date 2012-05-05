@@ -17,7 +17,6 @@
 
 require 'dms-core/data_type'
 require 'dms-core/tag'
-require 'multi_json'
 
 class DataSet < DataType
 	class ComponentData < Hash
@@ -32,19 +31,6 @@ class DataSet < DataType
 				new_data = (transport[component] = [])
 				data.map do |time, value|
 					new_data << [time.to_f, value]
-				end
-			end
-
-			transport
-		end
-
-		def to_json
-			transport = {}
-
-			each_pair do |component, data|
-				new_data = (transport[component] = [])
-				data.map do |time, value|
-					new_data.unshift [Integer(time.to_f * 1000), value]
 				end
 			end
 
@@ -96,16 +82,6 @@ class DataSet < DataType
 		end
 	end
 	
-	def to_json
-		MultiJson.dump({
-			type_name: @type_name,
-			tag_set: @tag_set.to_s,
-			time_from: @time_from.to_f,
-			time_span: @time_span,
-			component_data: @component_data.to_json,
-		})
-	end
-
 	def to_s
 		"DataSet[#{type_name}][#{tag_set.to_s}]: #{component_data.keys.map{|k| k.to_s}.sort.map{|k| "#{k}(#{component_data[k].length})"}.join(', ')}"
 	end
