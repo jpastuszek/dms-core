@@ -105,6 +105,10 @@ class TagPattern < Array
 		TagExpression.new([self])
 	end
 
+	def to_tag_query
+		to_tag_expression.to_tag_query
+	end
+
 	def inspect
 		"TagPattern#{super}"
 	end
@@ -127,6 +131,10 @@ class TagExpression < Set
 		self
 	end
 
+	def to_tag_query
+		TagQuery.new([self])
+	end
+
 	def inspect
 		"TagExpression#{to_a.map{|tag| tag.to_s}.sort.inspect}"
 	end
@@ -135,6 +143,34 @@ end
 class String
 	def to_tag_expression
 		TagExpression.new(self)
+	end
+end
+
+class TagQuery < Set
+	def initialize(value)
+		if value.is_a? String
+			super value.split('|').map{|tag_expression| TagExpression.new(tag_expression)}
+		else
+			super value.to_a.map{|it| it.is_a?(TagExpression) ? it : TagExpression.new(it)}
+		end
+	end
+
+	def to_s
+		to_a.map{|tag_expression| tag_expression.to_s}.sort.join(' | ')
+	end
+
+	def to_tag_query
+		self
+	end
+
+	def inspect
+		"TagQuery#{to_a.map{|tag_expression| tag_expression.to_s}.sort.inspect}"
+	end
+end
+
+class String
+	def to_tag_query
+		TagQuery.new(self)
 	end
 end
 

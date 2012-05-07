@@ -225,3 +225,78 @@ describe TagExpression do
 	end
 end
 
+describe TagQuery do
+	subject do
+		TagQuery[
+			TagExpression.new('xyz, memory, java:memory://:PermGem, /loc/:magi'),
+			TagExpression.new('virtual, CPU usage:CPU://, /loc/:nina')
+		]
+	end
+
+	it 'should convert to string in alphabetical order' do
+		subject.to_s.should == '/loc/:magi, java:memory://:PermGem, memory, xyz | /loc/:nina, CPU usage:CPU://, virtual'
+	end
+
+	it 'should allow checkting if tag is there' do
+		subject.member?(TagExpression.new('virtual, CPU usage:CPU://, /loc/:nina')).should be_true
+		subject.member?(TagExpression.new('virtual, CPU usage:CPU://, /loc/:magi')).should be_false
+	end
+
+	it 'should convert to array' do
+		subject.to_a.should include(TagExpression.new('xyz, memory, java:memory://:PermGem, /loc/:magi'))
+		subject.to_a.should include(TagExpression.new('virtual, CPU usage:CPU://, /loc/:nina'))
+	end
+
+	it 'should store new tag expressions' do
+		subject.add(TagExpression.new('test, jj'))
+		subject.to_s.should == '/loc/:magi, java:memory://:PermGem, memory, xyz | /loc/:nina, CPU usage:CPU://, virtual | jj, test'
+	end
+
+	it 'should construct from lazy formatted string' do
+		ts = TagQuery.new(' abc, zz:yy:qq|  xyz,memory, java:memory://:PermGem|/loc/:magi ')
+		ts.to_s.should == '/loc/:magi | abc, zz:yy:qq | java:memory://:PermGem, memory, xyz'
+		ts.should have(3).tag_expressions
+		ts.should include(TagExpression.new('abc, zz:yy:qq'))
+		ts.should include(TagExpression.new('xyz,memory, java:memory://:PermGem'))
+		ts.should include(TagExpression.new('/loc/:magi'))
+	end
+
+	it 'should construct from anything converable to array of strings' do
+		ts = TagQuery.new(['abc, zz:yy:qq', 'xyz,memory, java:memory://:PermGem', '/loc/:magi'])
+		ts.should have(3).tag_expressions
+		ts.should include(TagExpression.new('abc, zz:yy:qq'))
+		ts.should include(TagExpression.new('xyz,memory, java:memory://:PermGem'))
+		ts.should include(TagExpression.new('/loc/:magi'))
+	end
+
+	context 'conversion' do
+		it 'from string' do
+			ts = ' abc, zz:yy:qq|  xyz,memory, java:memory://:PermGem|/loc/:magi '.to_tag_query
+			ts.should be_a TagQuery
+			ts.should have(3).tag_expressions
+			ts.should include(TagExpression.new('abc, zz:yy:qq'))
+			ts.should include(TagExpression.new('xyz,memory, java:memory://:PermGem'))
+			ts.should include(TagExpression.new('/loc/:magi'))
+		end
+
+		it 'from TagPattern' do
+			ts = TagPattern.new('/loc/:magi').to_tag_query
+			ts.should be_a TagQuery
+			ts.should include(TagExpression.new('/loc/:magi'))
+		end
+
+		it 'from TagExpression' do
+			ts = TagExpression.new('/loc/:magi, abc:xyz').to_tag_query
+			ts.should be_a TagQuery
+			ts.should include(TagExpression.new('/loc/:magi, abc:xyz'))
+		end
+
+		it 'from itself' do
+			ts = subject.to_tag_query
+			ts.should be_a TagQuery
+			ts.to_a.should include(TagExpression.new('xyz, memory, java:memory://:PermGem, /loc/:magi'))
+			ts.to_a.should include(TagExpression.new('virtual, CPU usage:CPU://, /loc/:nina'))
+		end
+	end
+end
+
