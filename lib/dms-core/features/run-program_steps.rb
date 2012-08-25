@@ -33,6 +33,7 @@ end
 
 When /I wait for (.*) program termination/ do |program|
 	(@programs ||= ProgramList.new)[program].wait_exit
+	#puts (@programs ||= ProgramList.new)[program].output
 end
 
 Then /(.*) program exit status should be (.+)/ do |program, status|
@@ -66,11 +67,11 @@ end
 
 ## Common arguments
 
-Given /(.*) program debug enabled/ do |program|
+Given /(.*) program has debug enabled/ do |program|
 	step "#{program} program argument --debug"
 end
 
-Given /(.*) program use linger time of (.+)/ do |program, linger_time|
+Given /(.*) program is using linger time of (.+)/ do |program, linger_time|
 	step "#{program} program argument --linger-time #{linger_time}"
 end
 
