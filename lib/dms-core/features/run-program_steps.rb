@@ -31,7 +31,33 @@ Given /(.*) program is terminated/ do |program|
 	(@programs ||= ProgramList.new)[program].terminate
 end
 
-Then /(.*) program output should include following entries:/ do |log_entries|
+When /I wait for (.*) program termination/ do |program|
+	(@programs ||= ProgramList.new)[program].wait_exit
+end
+
+Then /(.*) program exit status should be (.+)/ do |program, status|
+	(@programs ||= ProgramList.new)[program].exit_status.should == status.to_i
+end
+
+## Common output tests
+
+Then /(.*) program output should include '(.*)$'/ do |program, entry|
+	(@programs ||= ProgramList.new)[program].output.should include(entry)
+end
+
+Then /(.*) program output should not include '(.*)'/ do |program, entry|
+	(@programs ||= ProgramList.new)[program].output.should_not include(entry)
+end
+
+Then /(.*) program output should include '(.*)' (.+) time/ do |program, entry, times|
+	(@programs ||= ProgramList.new)[program].output.scan(entry).size.should == times.to_i
+end
+
+Then /(.*) program last output line should include '(.*)'/ do |program, entry|
+	(@programs ||= ProgramList.new)[program].output.lines.to_a.last.should include(entry)
+end
+
+Then /(.*) program output should include following entries:/ do |program, log_entries|
 	@program_log = (@programs ||= ProgramList.new)[program].output
 	log_entries.raw.flatten.each do |entry|
 		@program_log.should include(entry)

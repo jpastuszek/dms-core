@@ -21,21 +21,32 @@ require 'daemon'
 
 class ProgramList
 	class Program
+		class NotStartedError < RuntimeError
+			def initialize(name)
+				supe "program #{name} was not started"
+			end
+		end
+
 		def initialize(name)
 			@name = name
 			@args = []
 		end
 
 		def spawn
-			SpawnProgram.new("bin/#{@name}", Shellwords.join(@args))
+			@program = SpawnProgram.new("bin/#{@name}", Shellwords.join(@args))
 		end
 
 		def load
-			LoadProgram.new("bin/#{@name}", Shellwords.join(@args))
+			@program = LoadProgram.new("bin/#{@name}", Shellwords.join(@args))
 		end
 
 		def <<(arg)
 			@args.concat Shellwords.split(arg)
+		end
+
+		def method_missing(name, *args)
+			raise NotStartedError.new(name) unless @program
+			@program.send(name, *args)
 		end
 	end
 
@@ -56,15 +67,17 @@ class ProgramBase
 			 Process.waitpid(pid, Process::WNOHANG).tap{sleep 0.1}
 		end or (puts 'killing'; Process.kill('KILL', pid))
 		Process.waitpid(pid)
-		$?.exitstatus
+		@exit_status = $?.exitstatus
 	rescue Errno::ESRCH, Errno::ECHILD
 		nil
 	end
 
 	def wait_exit(pid)
 		Process.waitpid(pid)
-		$?.exitstatus
+		@exit_status = $?.exitstatus
 	end
+
+	attr_reader :exit_status
 
 	def wait_url(test_url)
 		Timeout.timeout(10) do
