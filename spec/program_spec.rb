@@ -217,6 +217,46 @@ shared_examples :program do
 		settings.internal_console_publisher.should == 'ipc:///tmp/dms-console-connector-pub'
 	end
 
+	it 'should parse given cli arguments' do
+		settings = nil
+
+		Capture.stderr do
+			subject.new('DMS Test Daemon', version, ['--hello', 'world']) do
+				cli do
+					option :hello
+				end
+				
+				main do |s|
+					settings = s
+				end
+			end
+		end
+
+		settings.hello.should == 'world'
+	end
+
+	it 'should parse cli arguments from ARGS environment variable' do
+		settings = nil
+
+		ENV['ARGS'] = '--hello world'
+
+		Capture.stderr do
+			subject.new('DMS Test Daemon', version) do
+				cli do
+					option :hello
+				end
+				
+				main do |s|
+					settings = s
+				end
+			end
+		end
+
+		ENV['ARGS'] = nil
+
+		settings.hello.should == 'world'
+	end
+
 	it 'should have linger_time cli generator' do
 		settings = nil
 
