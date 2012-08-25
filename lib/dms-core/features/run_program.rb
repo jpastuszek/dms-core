@@ -15,10 +15,73 @@
 # You should have received a copy of the GNU General Public License
 # along with Distributed Monitoring System.  If not, see <http://www.gnu.org/licenses/>.
 
-class RunProgram
+require 'shellwords'
+require 'pathname'
+require 'daemon'
+
+class ProgramList
+	class Program
+		def initialize(name)
+			@name = name
+			@args = []
+		end
+
+		def spawn
+			SpawnProgram.new("bin/#{@name}", Shellwords.join(@args))
+		end
+
+		def load
+			LoadProgram.new("bin/#{@name}", Shellwords.join(@args))
+		end
+
+		def <<(arg)
+			@args.concat Shellwords.split(arg)
+		end
+	end
+
+	def initialize
+		@programs = {}
+		@program_args = {}
+	end
+
+	def [](name)
+		@programs[name] ||= Program.new(name)
+	end
+end
+
+class ProgramBase
+	def terminate(pid)
+		Process.kill('INT', pid)
+		(0..80).to_a.any? do
+			 Process.waitpid(pid, Process::WNOHANG).tap{sleep 0.1}
+		end or (puts 'killing'; Process.kill('KILL', pid))
+		Process.waitpid(pid)
+		$?.exitstatus
+	rescue Errno::ESRCH, Errno::ECHILD
+		nil
+	end
+
+	def wait_exit(pid)
+		Process.waitpid(pid)
+		$?.exitstatus
+	end
+
+	def wait_url(test_url)
+		Timeout.timeout(10) do
+			begin
+				HTTPClient.new.get_content(URI.encode(test_url))
+			rescue Errno::ECONNREFUSED
+				sleep 0.1
+				retry
+			end
+		end
+	end
+end
+
+class SpawnProgram < ProgramBase
 	def initialize(program, args = '')
 		r, w = IO.pipe
-		@pid = Process.spawn("bundle exec bin/#{program} #{args}", :out => w, :err => w)
+		@pid = Process.spawn("bundle exec #{program} #{args}", :out => w, :err => w)
 		w.close
 		@out_queue = Queue.new
 
@@ -42,19 +105,57 @@ class RunProgram
 	end
 
 	def terminate
-		Process.kill('INT', @pid)
-		(0..80).to_a.any? do
-			Process.waitpid(@pid, Process::WNOHANG).tap{sleep 0.1}
-		end or Process.kill('KILL', @pid)
-	rescue Errno::ESRCH
+		super @pid
 	ensure
 		@thread.join
 		self
 	end
 
-	def wait
-		Process.waitpid(@pid)
-		$?.exitstatus
+	def wait_exit
+		super @pid
+	end
+end
+
+class LoadProgram < ProgramBase
+	def initialize(program, args = '')
+		program = Pathname.new(program)
+		@pid_file = Pathname.new('/tmp') + program.basename.sub_ext('.pid')
+		@log_file = Pathname.new('/tmp') + program.basename.sub_ext('.log')
+
+		terminate
+
+		fork do
+			@log_file.exist? and @log_file.truncate(0)
+			Daemon.daemonize(@pid_file, @log_file)
+
+			ENV['ARGS'] = args
+			load program
+		end
+
+		Process.wait
+
+		at_exit do
+			terminate
+		end
+	end
+
+	def pid
+		pid_file = Pathname.new(@pid_file)
+		return nil unless pid_file.exist?
+
+		pid_file.read.strip.to_i
+	end
+
+	def output
+		@log_file.read
+	end
+
+	def terminate
+		super(pid || return)
+	end
+
+	def wait_exit
+		super pid
 	end
 end
 

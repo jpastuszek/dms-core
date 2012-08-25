@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Distributed Monitoring System.  If not, see <http://www.gnu.org/licenses/>.
 
-require_relative 'features/run_program'
-require_relative 'features/temp'
-require_relative 'features/run_program_steps'
-require_relative 'features/zero_mq_service_steps'
+Given /ZeroMQ service bus is configured with console connector publisher address (.*) and subscriber address (.*)/ do |pub, sub|
+	ZeroMQService.socket(:bus) do |zmq|
+		zmq.bus_connect(pub, sub, {hwm: 10, linger: 0})
+	end unless ZeroMQService.socket(:bus)
+end
 
