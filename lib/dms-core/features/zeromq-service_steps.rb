@@ -21,3 +21,9 @@ Given /ZeroMQ service bus is configured with console connector publisher address
 	end unless ZeroMQService.socket(:bus)
 end
 
+Then /I expect (.*) ZeroMQ bus messages/ do |messages|
+	messages.to_i.times do
+		ZeroMQService.socket(:bus).receive!
+	end
+end
+
