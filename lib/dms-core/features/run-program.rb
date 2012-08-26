@@ -33,15 +33,21 @@ class ProgramList
 		end
 
 		def spawn
+			terminate
 			@program = SpawnProgram.new("bin/#{@name}", Shellwords.join(@args))
 		end
 
 		def load
+			terminate
 			@program = LoadProgram.new("bin/#{@name}", Shellwords.join(@args))
 		end
 
 		def <<(arg)
 			@args.concat Shellwords.split(arg)
+		end
+
+		def terminate
+			@program.terminate if @program
 		end
 
 		def method_missing(name, *args)
@@ -58,18 +64,34 @@ class ProgramList
 	def [](name)
 		@programs[name] ||= Program.new(name)
 	end
+
+	def terminate
+		@programs.each do |name, program|
+			program.terminate
+		end
+	end
 end
 
 class ProgramBase
 	def terminate(pid)
+		#puts ">> terminating #{pid}"
 		Process.kill('INT', pid)
-		(0..80).to_a.any? do
-			 Process.waitpid(pid, Process::WNOHANG).tap{sleep 0.1}
-		end or (puts 'killing'; Process.kill('KILL', pid))
+
+		80.times do
+			print '.'
+			Process.waitpid(pid, Process::WNOHANG)
+			sleep 0.1
+		end
+
+		puts "killing #{pid}..."
+		Process.kill('KILL', pid)
 		Process.waitpid(pid)
+		puts "killed #{pid}"
+	rescue Errno::ESRCH # nothing to kill
+		#puts "<- #{pid} already gone"
+	rescue Errno::ECHILD # child is gone (terminated)
+		#puts "<< #{pid} terminated"
 		@exit_status = $?.exitstatus
-	rescue Errno::ESRCH, Errno::ECHILD
-		nil
 	end
 
 	def wait_exit(pid)
@@ -93,6 +115,7 @@ end
 
 class SpawnProgram < ProgramBase
 	def initialize(program, args = '')
+		#puts ">> spawning #{program} #{args}"
 		r, w = IO.pipe
 		@pid = Process.spawn("bundle exec #{program} #{args}", :out => w, :err => w)
 		w.close
@@ -110,11 +133,14 @@ class SpawnProgram < ProgramBase
 		at_exit do
 			terminate
 		end
+		#puts "<< spawned #{program}: pid: #{@pid}"
 	end
 
 	def output
 		@out << @out_queue.pop until @out_queue.empty?
-		@out.join
+		o = @out.join
+		#puts o
+		o
 	end
 
 	def terminate
@@ -134,8 +160,6 @@ class LoadProgram < ProgramBase
 		program = Pathname.new(program)
 		@pid_file = Pathname.new('/tmp') + program.basename.sub_ext('.pid')
 		@log_file = Pathname.new('/tmp') + program.basename.sub_ext('.log')
-
-		terminate
 
 		fork do
 			@log_file.exist? and @log_file.truncate(0)

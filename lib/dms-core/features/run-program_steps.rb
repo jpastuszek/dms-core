@@ -15,50 +15,58 @@
 # You should have received a copy of the GNU General Public License
 # along with Distributed Monitoring System.  If not, see <http://www.gnu.org/licenses/>.
 
-Given /(.*) program argument (.*)/ do |program, argument|
+Given /([^ ]*) argument (.*)/ do |program, argument|
 	(@programs ||= ProgramList.new)[program] << argument
 end
 
-Given /(.*) program is loaded/ do |program|
+Given /([^ ]*) is loaded/ do |program|
 	(@programs ||= ProgramList.new)[program].load
 end
 
-Given /(.*) program is spawned/ do |program|
+Given /([^ ]*) is spawned/ do |program|
 	(@programs ||= ProgramList.new)[program].spawn
 end
 
-Given /(.*) program is terminated/ do |program|
+Given /([^ ]*) is terminated/ do |program|
 	(@programs ||= ProgramList.new)[program].terminate
 end
 
-When /I wait for (.*) program termination/ do |program|
+When /([^ ]*) is running/ do |program|
+	(@programs ||= ProgramList.new)[program].spawn
+end
+
+When /I wait for (.*) termination/ do |program|
 	(@programs ||= ProgramList.new)[program].wait_exit
 	#puts (@programs ||= ProgramList.new)[program].output
 end
 
-Then /(.*) program exit status should be (.+)/ do |program, status|
+Then /([^ ]*) exit status should be (.+)/ do |program, status|
 	(@programs ||= ProgramList.new)[program].exit_status.should == status.to_i
+end
+
+After do
+	@programs.terminate if @programs
 end
 
 ## Common output tests
 
-Then /(.*) program output should include '(.*)$'/ do |program, entry|
+Then /([^ ]*) output should include '(.*)$'/ do |program, entry|
 	(@programs ||= ProgramList.new)[program].output.should include(entry)
 end
 
-Then /(.*) program output should not include '(.*)'/ do |program, entry|
+Then /([^ ]*) output should not include '(.*)'/ do |program, entry|
 	(@programs ||= ProgramList.new)[program].output.should_not include(entry)
 end
 
-Then /(.*) program output should include '(.*)' (.+) time/ do |program, entry, times|
+Then /([^ ]*) output should include '(.*)' (.+) time/ do |program, entry, times|
 	(@programs ||= ProgramList.new)[program].output.scan(entry).size.should == times.to_i
 end
 
-Then /(.*) program last output line should include '(.*)'/ do |program, entry|
+Then /([^ ]*) last output line should include '(.*)'/ do |program, entry|
 	(@programs ||= ProgramList.new)[program].output.lines.to_a.last.should include(entry)
 end
 
-Then /(.*) program output should include following entries:/ do |program, log_entries|
+Then /([^ ]*) output should include following entries:/ do |program, log_entries|
 	@program_log = (@programs ||= ProgramList.new)[program].output
 	log_entries.raw.flatten.each do |entry|
 		@program_log.should include(entry)
@@ -67,19 +75,19 @@ end
 
 ## Common arguments
 
-Given /(.*) program has debug enabled/ do |program|
-	step "#{program} program argument --debug"
+Given /([^ ]*) has debug enabled/ do |program|
+	step "#{program} argument --debug"
 end
 
-Given /(.*) program is using linger time of (.+)/ do |program, linger_time|
-	step "#{program} program argument --linger-time #{linger_time}"
+Given /([^ ]*) is using linger time of (.+)/ do |program, linger_time|
+	step "#{program} argument --linger-time #{linger_time}"
 end
 
-Given /(.*) program console connector subscribe address is (.*)/ do |program, address|
-	step "#{program} program argument --console-subscriber #{address}"
+Given /([^ ]*) console connector subscribe address is (.*)/ do |program, address|
+	step "#{program} argument --console-subscriber #{address}"
 end
 
-Given /(.*) program console connector publish address is (.*)/ do |program, address|
-	step "#{program} program argument --console-publish #{address}"
+Given /([^ ]*) console connector publish address is (.*)/ do |program, address|
+	step "#{program} argument --console-publish #{address}"
 end
 
