@@ -23,7 +23,7 @@ class ProgramList
 	class Program
 		class NotStartedError < RuntimeError
 			def initialize(name)
-				supe "program #{name} was not started"
+				super "program #{name} was not started"
 			end
 		end
 
@@ -78,7 +78,7 @@ class ProgramBase
 		Process.kill('INT', pid)
 
 		80.times do
-			print '.'
+			#print '.'
 			Process.waitpid(pid, Process::WNOHANG)
 			sleep 0.1
 		end
@@ -124,6 +124,7 @@ class SpawnProgram < ProgramBase
 		@thread = Thread.new do
 			r.each_line do |line|
 				yield line if block_given?
+				#puts line
 				@out_queue << line
 			end
 		end
@@ -138,9 +139,7 @@ class SpawnProgram < ProgramBase
 
 	def output
 		@out << @out_queue.pop until @out_queue.empty?
-		o = @out.join
-		#puts o
-		o
+		@out.join
 	end
 
 	def terminate

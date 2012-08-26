@@ -85,9 +85,13 @@ end
 
 Given /([^ ]*) console connector subscribe address is (.*)/ do |program, address|
 	step "#{program} argument --console-subscriber #{address}"
+	# useful in other steps
+	@console_connector_sub_address = address
 end
 
 Given /([^ ]*) console connector publish address is (.*)/ do |program, address|
-	step "#{program} argument --console-publish #{address}"
+	step "#{program} argument --console-publisher #{address}"
+	# useful in other steps
+	@console_connector_pub_address = address
 end
 
