@@ -150,7 +150,7 @@ class Program
 				short: :d,
 				description: 'enable debugging'
 
-		@settings = @cli.parse!(ENV['ARGS'] ? Shellwords.split(ENV['ARGS']) : argv, &@validator)
+		@settings = @cli.parse!(ENV['DMS_PROGRAM_ARGS'] ? Shellwords.split(ENV['DMS_PROGRAM_ARGS']) : argv, &@validator)
 
 		@settings.program_name = program_name
 		@settings.program_class_name = @settings.program_name.delete(' ')

@@ -235,10 +235,10 @@ shared_examples :program do
 		settings.hello.should == 'world'
 	end
 
-	it 'should parse cli arguments from ARGS environment variable' do
+	it 'should parse cli arguments from DMS_PROGRAM_ARGS environment variable' do
 		settings = nil
 
-		ENV['ARGS'] = '--hello world'
+		ENV['DMS_PROGRAM_ARGS'] = '--hello world'
 
 		Capture.stderr do
 			subject.new('DMS Test Daemon', version) do
@@ -252,7 +252,7 @@ shared_examples :program do
 			end
 		end
 
-		ENV['ARGS'] = nil
+		ENV['DMS_PROGRAM_ARGS'] = nil
 
 		settings.hello.should == 'world'
 	end
