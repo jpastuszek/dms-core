@@ -73,6 +73,11 @@ Then /([^ ]*) output should include following entries:/ do |program, log_entries
 	end
 end
 
+# For debugging
+Then /([^ ]*) output is displayed/ do |program|
+	print (@programs ||= ProgramList.new)[program].output
+end
+
 ## Common arguments
 
 Given /([^ ]*) has debug enabled/ do |program|
