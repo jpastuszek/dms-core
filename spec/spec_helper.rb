@@ -46,3 +46,34 @@ def keep_trying
 	end
 end
 
+require 'dms-core/data_type'
+
+class TestMessage < DataType
+	attr_reader :value
+
+	def initialize(value)
+		@value = value
+	end
+
+	def self.from_message(message)
+		self.new(message[:value])
+	end
+
+	def to_message(topic = '')
+		Message.new(self.class.name, topic, 0) do |body|
+			body[:value] = @value
+		end
+	end
+
+	def to_s
+		"TestMessage[#{value}]"
+	end
+
+	def ==(other)
+		return false unless other.instance_of? self.class
+		value == other.value
+	end
+
+	register(self)
+end
+

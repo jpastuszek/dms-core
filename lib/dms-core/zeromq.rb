@@ -223,12 +223,15 @@ class ZeroMQ
 			unless @on_handlers.has_key? data_type
 				@on_handlers[data_type] = {}
 
+				# set callback on data_type
 				super data_type do |message, topic|
+					# find topic handler if any
 					on_topic = @on_handlers[data_type]
 					if topic != '' and on_topic.has_key? topic
 						on_topic[topic].call(message, topic)
 					end
 
+					# call on all topic handler
 					if on_topic.has_key? ''
 						on_topic[''].call(message, topic)
 					end
@@ -249,8 +252,12 @@ class ZeroMQ
 
 		private
 
-		def subscribe(object = nil, topic = '')
-			ok? @socket.setsockopt(ZMQ::SUBSCRIBE, ! object ? '' : "#{object}/#{topic.empty? ? '' : topic + "\n"}")
+		# Subscription strings:
+		# '' - for all
+		# 'DataType/' - for given object, all topics
+		# 'DataType/topic\n' - given object, given topic
+		def subscribe(data_type = nil, topic = '')
+			ok? @socket.setsockopt(ZMQ::SUBSCRIBE, ! data_type ? '' : "#{data_type}/#{topic.empty? ? '' : topic + "\n"}")
 			self
 		end
 	end
