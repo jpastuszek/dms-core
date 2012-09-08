@@ -15,7 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Distributed Monitoring System.  If not, see <http://www.gnu.org/licenses/>.
 
-require 'dms-core/features/run_program'
-require 'dms-core/features/temp'
-require 'dms-core/features/steps'
+require_relative 'features/run-program'
+require_relative 'features/temp'
+require_relative 'features/run-program_steps'
+require_relative 'features/zeromq-service_steps'
 

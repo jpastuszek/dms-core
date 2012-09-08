@@ -15,46 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Distributed Monitoring System.  If not, see <http://www.gnu.org/licenses/>.
 
-class RunProgram
-	def initialize(program, args = '')
-		r, w = IO.pipe
-		@pid = Process.spawn("bundle exec bin/#{program} #{args}", :out => w, :err => w)
-		w.close
-		@out_queue = Queue.new
+Given /ZeroMQ service bus is configured with console connector publisher address (.*) and subscriber address (.*)/ do |pub, sub|
+	ZeroMQService.socket(:bus) do |zmq|
+		zmq.bus_connect(pub, sub, {hwm: 10, linger: 0})
+	end unless ZeroMQService.socket(:bus)
+end
 
-		@thread = Thread.new do
-			r.each_line do |line|
-				yield line if block_given?
-				@out_queue << line
-			end
-		end
-
-		@out = []
-
-		at_exit do
-			terminate
-		end
-	end
-
-	def output
-		@out << @out_queue.pop until @out_queue.empty?
-		@out.join
-	end
-
-	def terminate
-		Process.kill('INT', @pid)
-		(0..80).to_a.any? do
-			Process.waitpid(@pid, Process::WNOHANG).tap{sleep 0.1}
-		end or Process.kill('KILL', @pid)
-	rescue Errno::ESRCH
-	ensure
-		@thread.join
-		self
-	end
-
-	def wait
-		Process.waitpid(@pid)
-		$?.exitstatus
+Then /I expect (.*) ZeroMQ bus messages/ do |messages|
+	messages.to_i.times do
+		ZeroMQService.socket(:bus).receive!
 	end
 end
 

@@ -59,6 +59,12 @@ class ZeroMQ
 
 	class Socket
 		include ZeroMQError
+		
+		class NilAddressGivenError < ArgumentError
+			def initialize
+				super "socket address cannot be nil"
+			end
+		end
 
 		def initialize(socket)
 			@socket = socket
@@ -75,11 +81,13 @@ class ZeroMQ
 		attr_reader :socket
 
 		def connect(address)
+			raise NilAddressGivenError unless address
 			ok? @socket.connect(address)
 			self
 		end
 
 		def bind(address)
+			raise NilAddressGivenError unless address
 			ok? @socket.bind(address)
 			self
 		end
