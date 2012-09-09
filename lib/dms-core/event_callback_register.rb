@@ -59,12 +59,6 @@ class EventCallbackRegister
 			branch(:raw)
 		when :any
 			branch(:raw, :parsed)
-		when :default
-			unless topic
-				branch(:raw, :parsed, :default)
-			else
-				branch(:raw, :parsed, :default, topic)
-			end
 		else
 			unless topic
 				branch(:raw, :parsed, type)
@@ -73,10 +67,7 @@ class EventCallbackRegister
 			end
 		end
 
-		#@callback_tree.print_tree
-		#p node
 		node.register(callback)
-		
 		return Handle.new(node, callback)
 	end
 
