@@ -85,3 +85,7 @@ class TestMessageB < TestMessage
 	register(self)
 end
 
+class TestMessageUnregistered < TestMessage
+end
+
+

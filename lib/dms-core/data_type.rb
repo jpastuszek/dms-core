@@ -19,7 +19,7 @@ require 'dms-core/message'
 
 class DataType
 	class DataTypeError < ArgumentError
-		class UnknowndDataTypeError < DataTypeError
+		class UnknownDataTypeError < DataTypeError
 			def initialize(data_type_name)
 				super "unknown data type: #{data_type_name}"
 			end
@@ -33,7 +33,7 @@ class DataType
 	end
 
 	def self.data_type(data_type_name)
-		@@data_types[data_type_name] or raise DataTypeError::UnknowndDataTypeError, data_type_name
+		@@data_types[data_type_name] or raise DataTypeError::UnknownDataTypeError, data_type_name
 	end
 
 	def self.from_message(message)

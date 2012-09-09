@@ -65,7 +65,7 @@ class EventCallbackRegister
 			unless topic
 				branch(:raw, :parsed, type)
 			else
-				fail
+				branch(:raw, :parsed, type, topic)
 			end
 		end
 
@@ -78,24 +78,29 @@ class EventCallbackRegister
 
 	def <<(raw_message)
 		message = raw_message
+		type_class = nil
+		topic = nil
 		node = @callback_tree
 
 		[:raw, :parsed, :object, :topic].each do |type|
-			if type == :object
-				type = if message.instance_of? Message
-					# message should be parsed at this stage
-					DataType.data_type(message.data_type)
-				else
-					# or it is also casted to data type
-					message.class
-				end
+			type = case type
+			when :object
+				type_class
+			when :topic
+				topic
+			else
+				type
 			end
 
 			# try node by type, default or give up
 			node = (node[type] or node[:default] or return)
 
 			# parse message - if :parsed branch exists than we have some callers to find
-			message = Message.load(message) if type == :parsed 
+			if type == :parsed 
+				message = Message.load(message) 
+				type_class = DataType.data_type(message.data_type)
+				topic = message.topic
+			end
 
 			if node.callers?
 				# cast message to data type if we have parsed message but only if we have callers for it
@@ -103,6 +108,8 @@ class EventCallbackRegister
 				node.call(message)
 			end
 		end
+	rescue DataType::DataTypeError::UnknownDataTypeError
+		# stop processing if messages data type is not known
 	end
 
 	private
