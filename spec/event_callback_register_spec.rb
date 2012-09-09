@@ -345,5 +345,49 @@ describe EventCallbackRegister do
 			recv_messages_b_4.should == [TestMessageB.new(4), TestMessageB.new(4)]
 		end
 	end
+
+	describe "on :default + topic" do
+		it 'should pass only objects that does not match any callback for data type but for given topic' do
+			sent_messages = [
+				TestMessage.new(1), 
+				TestMessageA.new(2),
+				TestMessageB.new(3),
+				TestMessageA.new(3),
+				TestMessageB.new(4),
+				TestMessageB.new(4),
+			]
+			sent_raw_messages = sent_messages.map{|msg| msg.to_message('topic'+ msg.value.to_s).to_s}
+
+			recv_messages_default_2 = []
+			recv_messages_default_3 = []
+			recv_messages_b_3 = []
+			recv_messages_b_4 = []
+
+			subject.on(:default, 'topic2') do |message|
+				recv_messages_default_2 << message
+			end
+
+			subject.on(:default, 'topic3') do |message|
+				recv_messages_default_3 << message
+			end
+
+			subject.on(TestMessageB, 'topic3') do |message|
+				recv_messages_b_3 << message
+			end
+
+			subject.on(TestMessageB, 'topic4') do |message|
+				recv_messages_b_4 << message
+			end
+
+			sent_raw_messages.each do |message|
+				subject << message
+			end
+
+			recv_messages_default_2.should == [TestMessageA.new(2)]
+			recv_messages_default_3.should == [TestMessageA.new(3)]
+			recv_messages_b_3.should == [TestMessageB.new(3)]
+			recv_messages_b_4.should == [TestMessageB.new(4), TestMessageB.new(4)]
+		end
+	end
 end
 

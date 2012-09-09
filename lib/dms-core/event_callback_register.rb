@@ -50,7 +50,7 @@ class EventCallbackRegister
 	end
 
 	def initialize
-		@callback_tree = Tree::TreeNode.new(:root)
+		@callback_tree = Tree::TreeNode.new(:callback_tree)
 	end
 
 	def on(type, topic = nil, &callback)
@@ -60,7 +60,11 @@ class EventCallbackRegister
 		when :any
 			branch(:raw, :parsed)
 		when :default
-			branch(:raw, :parsed, :default)
+			unless topic
+				branch(:raw, :parsed, :default)
+			else
+				branch(:raw, :parsed, :default, topic)
+			end
 		else
 			unless topic
 				branch(:raw, :parsed, type)
