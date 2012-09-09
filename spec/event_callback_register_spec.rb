@@ -209,7 +209,37 @@ describe EventCallbackRegister do
 				'any', 'object',
 				'any', 'object',
 			]
+		end
+	end
+	
+	describe 'on :default' do
+		it 'should pass only objects that does not match any callback for data type' do
+			sent_messages = [
+				TestMessage.new(1), 
+				TestMessageA.new(2),
+				TestMessageB.new(3),
+				TestMessageA.new(4),
+				TestMessageB.new(5),
+			]
+			sent_raw_messages = sent_messages.map{|msg| msg.to_message.to_s}
 
+			recv_messages = []
+			recv_messages_default = []
+
+			subject.on(TestMessage) do |message|
+				recv_messages << message
+			end
+
+			subject.on(:default) do |message|
+				recv_messages_default << message
+			end
+
+			sent_raw_messages.each do |message|
+				subject << message
+			end
+
+			recv_messages.should == sent_messages.select{|m| m.instance_of? TestMessage}
+			recv_messages_default.should == sent_messages.select{|m| m.instance_of? TestMessageA or m.instance_of? TestMessageB}
 		end
 	end
 end

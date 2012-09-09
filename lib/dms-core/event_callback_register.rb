@@ -91,8 +91,8 @@ class EventCallbackRegister
 				end
 			end
 
-			# quit if we don't have more branches
-			node = node[type] or return
+			# try node by type, default or give up
+			node = (node[type] or node[:default] or return)
 
 			# parse message - if :parsed branch exists than we have some callers to find
 			message = Message.load(message) if type == :parsed 
