@@ -66,7 +66,7 @@ class TestMessage < DataType
 	end
 
 	def to_s
-		"TestMessage[#{value}]"
+		"#{self.class.name}[#{value}]"
 	end
 
 	def ==(other)
@@ -74,6 +74,14 @@ class TestMessage < DataType
 		value == other.value
 	end
 
+	register(self)
+end
+
+class TestMessageA < TestMessage
+	register(self)
+end
+
+class TestMessageB < TestMessage
 	register(self)
 end
 

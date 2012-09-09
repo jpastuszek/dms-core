@@ -62,7 +62,11 @@ class EventCallbackRegister
 		when :default
 			branch(:raw, :parsed, :default)
 		else
-			fail
+			unless topic
+				branch(:raw, :parsed, type)
+			else
+				fail
+			end
 		end
 
 		#@callback_tree.print_tree
@@ -76,7 +80,17 @@ class EventCallbackRegister
 		message = raw_message
 		node = @callback_tree
 
-		[:raw, :parsed, :default].each do |type|
+		[:raw, :parsed, :object, :topic].each do |type|
+			if type == :object
+				type = if message.instance_of? Message
+					# message should be parsed at this stage
+					DataType.data_type(message.data_type)
+				else
+					# or it is also casted to data type
+					message.class
+				end
+			end
+
 			# quit if we don't have more branches
 			node = node[type] or return
 
@@ -97,13 +111,10 @@ class EventCallbackRegister
 	def branch(*path)
 		node = @callback_tree 
 		path.each do |name|
-			if name.is_a? Symbol
-				node << CallbackNode.new(name) unless node[name]
-				node = node[name]
-			else
-				fail "not impl"
-			end
+			node << CallbackNode.new(name) unless node[name]
+			node = node[name]
 		end
+		#@callback_tree.print_tree
 		node
 	end
 end

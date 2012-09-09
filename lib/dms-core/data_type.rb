@@ -32,8 +32,12 @@ class DataType
 		@@data_types[data_type_class.name] = data_type_class
 	end
 
+	def self.data_type(data_type_name)
+		@@data_types[data_type_name] or raise DataTypeError::UnknowndDataTypeError, data_type_name
+	end
+
 	def self.from_message(message)
-		data_type = @@data_types[message.data_type] or raise DataTypeError::UnknowndDataTypeError, message.data_type
+		data_type = data_type(message.data_type)
 		data_type.from_message(message)
 	end
 

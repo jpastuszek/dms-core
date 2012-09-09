@@ -73,5 +73,144 @@ describe EventCallbackRegister do
 			recv_messages.should == sent_messages
 		end
 	end
+
+	describe "on object type" do
+		it 'should pass only objects on given type' do
+			sent_messages = [
+				TestMessage.new(1), 
+				TestMessageA.new(2),
+				TestMessageB.new(3),
+				TestMessageA.new(4),
+				TestMessageB.new(5),
+			]
+			sent_raw_messages = sent_messages.map{|msg| msg.to_message.to_s}
+
+			recv_messages = []
+			recv_messages_a = []
+			recv_messages_b = []
+
+			subject.on(TestMessage) do |message|
+				recv_messages << message
+			end
+
+			subject.on(TestMessageA) do |message|
+				recv_messages_a << message
+			end
+
+			subject.on(TestMessageB) do |message|
+				recv_messages_b << message
+			end
+
+			sent_raw_messages.each do |message|
+				subject << message
+			end
+
+			recv_messages.should == sent_messages.select{|m| m.instance_of? TestMessage}
+			recv_messages_a.should == sent_messages.select{|m| m.instance_of? TestMessageA}
+			recv_messages_b.should == sent_messages.select{|m| m.instance_of? TestMessageB}
+		end
+
+		it 'should pass objects to multiple callbacks' do
+			sent_messages = [
+				TestMessage.new(1), 
+				TestMessageA.new(2),
+				TestMessageB.new(3),
+				TestMessageA.new(4),
+				TestMessageB.new(5),
+			]
+			sent_raw_messages = sent_messages.map{|msg| msg.to_message.to_s}
+
+			recv_messages = []
+			recv_messages_a = []
+			recv_messages_a2 = []
+			recv_messages_b = []
+			recv_messages_b2 = []
+			recv_messages_b3 = []
+
+			subject.on(TestMessage) do |message|
+				recv_messages << message
+			end
+
+			subject.on(TestMessageA) do |message|
+				recv_messages_a << message
+			end
+
+			subject.on(TestMessageA) do |message|
+				recv_messages_a2 << message
+			end
+
+			subject.on(TestMessageB) do |message|
+				recv_messages_b << message
+			end
+
+			subject.on(TestMessageB) do |message|
+				recv_messages_b2 << message
+			end
+
+			subject.on(TestMessageB) do |message|
+				recv_messages_b3 << message
+			end
+
+			sent_raw_messages.each do |message|
+				subject << message
+			end
+
+			recv_messages.should == sent_messages.select{|m| m.instance_of? TestMessage}
+			recv_messages_a.should == sent_messages.select{|m| m.instance_of? TestMessageA}
+			recv_messages_a2.should == sent_messages.select{|m| m.instance_of? TestMessageA}
+			recv_messages_b.should == sent_messages.select{|m| m.instance_of? TestMessageB}
+			recv_messages_b2.should == sent_messages.select{|m| m.instance_of? TestMessageB}
+			recv_messages_b3.should == sent_messages.select{|m| m.instance_of? TestMessageB}
+		end
+
+		it 'should pass object to :any handler first' do
+			sent_messages = [
+				TestMessage.new(1), 
+				TestMessageA.new(2),
+				TestMessageB.new(3),
+				TestMessageA.new(4),
+				TestMessageB.new(5),
+			]
+			sent_raw_messages = sent_messages.map{|msg| msg.to_message.to_s}
+
+			recv_order = []
+			recv_messages_any = []
+			recv_messages = []
+
+			subject.on(:any) do |message|
+				recv_messages_any << message
+				recv_order << 'any'
+			end
+
+			subject.on(TestMessage) do |message|
+				recv_messages << message
+				recv_order << 'object'
+			end
+
+			subject.on(TestMessageA) do |message|
+				recv_messages << message
+				recv_order << 'object'
+			end
+
+			subject.on(TestMessageB) do |message|
+				recv_messages << message
+				recv_order << 'object'
+			end
+
+			sent_raw_messages.each do |message|
+				subject << message
+			end
+
+			recv_messages.should == sent_messages
+			recv_order.should == [
+				'any', 'object',
+				'any', 'object',
+				'any', 'object',
+				'any', 'object',
+				'any', 'object',
+			]
+
+		end
+	end
 end
 
