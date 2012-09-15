@@ -74,8 +74,12 @@ class Bus
 	end
 
 	def close
-		@sub.close
 		@pub.close
+		@sub.close
+	end
+
+	def on_close(&callback)
+		@sub.on_close(&callback)
 	end
 
 	def closed?

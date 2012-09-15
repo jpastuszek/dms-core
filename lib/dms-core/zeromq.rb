@@ -68,6 +68,7 @@ class ZeroMQ
 
 		def initialize(socket)
 			@socket = socket
+			@on_close = []
 			begin
 				yield socket
 			rescue
@@ -100,8 +101,15 @@ class ZeroMQ
 		end
 
 		def close
+			return if closed?
+			@on_close.shift.call(self) until @on_close.empty?
+
 			ok? @socket.close unless @closed
 			@closed = true
+		end
+
+		def on_close(&callback)
+			@on_close << callback
 		end
 
 		def closed?
@@ -379,7 +387,7 @@ class ZeroMQ
 		end
 
 		def deregister(object)
-			@poller.deregister_readable(object.socket)
+			@poller.deregister_readable(object.socket) unless object.closed?
 			@sockets.delete(object)
 		end
 

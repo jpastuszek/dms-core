@@ -36,14 +36,15 @@ class ZeroMQServiceInstance
 	end
 
 	def socket(name, &block)
-		if socket = @sockets[name] and socket.closed?
-			poller.deregister(socket)
-			@sockets.delete name 
-		end
-
 		if block_given?
 			raise SocketExistsError, name if @sockets.member? name
+
 			socket = yield zeromq
+
+			socket.on_close do |socket|
+				poller.deregister(socket)
+				@sockets.delete name 
+			end
 			@sockets[name] = socket
 			poller << socket
 		end
