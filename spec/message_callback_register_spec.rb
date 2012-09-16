@@ -37,29 +37,8 @@ describe MessageCallbackRegister do
 	describe 'on :any' do
 		it 'should pass all messages in parsed form' do
 			sent_messages = [TestMessage.new(1), TestMessage.new(2)]
-			recv_messages = []
-
-			subject.on(:any) do |message|
-				recv_messages << message
-			end
-
-			sent_messages.each do |message|
-				subject << message.to_message.to_s
-			end
-
-			recv_messages.should == sent_messages
-		end
-
-		it 'should pass all messages in raw form for :raw callback' do
-			sent_messages = [TestMessage.new(1), TestMessage.new(2)]
 			sent_raw_messages = sent_messages.map{|msg| msg.to_message.to_s}
-
-			recv_raw_messages = []
 			recv_messages = []
-
-			subject.on(:raw) do |message|
-				recv_raw_messages << message
-			end
 
 			subject.on(:any) do |message|
 				recv_messages << message
@@ -69,7 +48,6 @@ describe MessageCallbackRegister do
 				subject << message
 			end
 
-			recv_raw_messages.should == sent_raw_messages
 			recv_messages.should == sent_messages
 		end
 
@@ -95,10 +73,40 @@ describe MessageCallbackRegister do
 
 			recv_messages.should == sent_messages.select{|m| not m.instance_of? TestMessageUnregistered}
 		end
+
+		it 'should pass messages to :raw callback first' do
+			sent_messages = [TestMessage.new(1), TestMessage.new(2)]
+			sent_raw_messages = sent_messages.map{|msg| msg.to_message.to_s}
+
+			recv_order = []
+			recv_raw_messages = []
+			recv_messages = []
+
+			subject.on(:any) do |message|
+				recv_messages << message
+				recv_order << :any
+			end
+
+			subject.on(:raw) do |message|
+				recv_raw_messages << message
+				recv_order << :raw
+			end
+
+			sent_raw_messages.each do |message|
+				subject << message
+			end
+
+			recv_messages.should == sent_messages
+			recv_raw_messages.should == sent_raw_messages
+			recv_order.should == [
+				:raw, :any,
+				:raw, :any,
+			]
+		end
 	end
 
-	describe "on object type" do
-		it 'should pass only objects of given type' do
+	describe "on message type" do
+		it 'should pass only messages of given type' do
 			sent_messages = [
 				TestMessage.new(1), 
 				TestMessageA.new(2),
@@ -133,7 +141,7 @@ describe MessageCallbackRegister do
 			recv_messages_b.should == sent_messages.select{|m| m.instance_of? TestMessageB}
 		end
 
-		it 'should pass objects to multiple callbacks' do
+		it 'should pass messages to multiple callbacks' do
 			sent_messages = [
 				TestMessage.new(1), 
 				TestMessageA.new(2),
@@ -186,7 +194,7 @@ describe MessageCallbackRegister do
 			recv_messages_b3.should == sent_messages.select{|m| m.instance_of? TestMessageB}
 		end
 
-		it 'should pass object to :any handler first' do
+		it 'should pass message to :any callback first' do
 			sent_messages = [
 				TestMessage.new(1), 
 				TestMessageA.new(2),
@@ -197,27 +205,27 @@ describe MessageCallbackRegister do
 			sent_raw_messages = sent_messages.map{|msg| msg.to_message.to_s}
 
 			recv_order = []
-			recv_messages_any = []
+			recv_any_messages = []
 			recv_messages = []
-
-			subject.on(:any) do |message|
-				recv_messages_any << message
-				recv_order << 'any'
-			end
 
 			subject.on(TestMessage) do |message|
 				recv_messages << message
-				recv_order << 'object'
+				recv_order << message.class
 			end
 
 			subject.on(TestMessageA) do |message|
 				recv_messages << message
-				recv_order << 'object'
+				recv_order << message.class
 			end
 
 			subject.on(TestMessageB) do |message|
 				recv_messages << message
-				recv_order << 'object'
+				recv_order << message.class
+			end
+
+			subject.on(:any) do |message|
+				recv_any_messages << message
+				recv_order << :any
 			end
 
 			sent_raw_messages.each do |message|
@@ -225,42 +233,14 @@ describe MessageCallbackRegister do
 			end
 
 			recv_messages.should == sent_messages
+			recv_any_messages.should == sent_messages
 			recv_order.should == [
-				'any', 'object',
-				'any', 'object',
-				'any', 'object',
-				'any', 'object',
-				'any', 'object',
+				:any, TestMessage,
+				:any, TestMessageA,
+				:any, TestMessageB,
+				:any, TestMessageA,
+				:any, TestMessageB,
 			]
-		end
-
-		it 'should not process messages of unknown type' do
-			sent_messages = [
-				TestMessage.new(1), 
-				TestMessageA.new(2),
-				TestMessageB.new(3),
-				TestMessageUnregistered.new(4),
-				TestMessage.new(5),
-			]
-			sent_raw_messages = sent_messages.map{|msg| msg.to_message.to_s}
-
-			recv_messages = []
-			recv_messages_unreg = []
-
-			subject.on(TestMessage) do |message|
-				recv_messages << message
-			end
-
-			subject.on(TestMessageUnregistered) do |message|
-				recv_messages_unreg << message
-			end
-
-			sent_raw_messages.each do |message|
-				subject << message
-			end
-
-			recv_messages.should == [TestMessage.new(1), TestMessage.new(5)]
-			recv_messages_unreg.should be_empty
 		end
 	end
 	
@@ -293,10 +273,49 @@ describe MessageCallbackRegister do
 			recv_messages.should == sent_messages.select{|m| m.instance_of? TestMessage}
 			recv_messages_default.should == sent_messages.select{|m| m.instance_of? TestMessageA or m.instance_of? TestMessageB}
 		end
+
+		it 'should pass message to :any callback first' do
+			sent_messages = [
+				TestMessage.new(1), 
+				TestMessageA.new(2),
+				TestMessageB.new(3),
+				TestMessageA.new(4),
+				TestMessageB.new(5),
+			]
+			sent_raw_messages = sent_messages.map{|msg| msg.to_message.to_s}
+
+			recv_order = []
+			recv_any_messages = []
+			recv_messages = []
+
+			subject.on(:default) do |message|
+				recv_messages << message
+				recv_order << message.class
+			end
+
+			subject.on(:any) do |message|
+				recv_any_messages << message
+				recv_order << :any
+			end
+
+			sent_raw_messages.each do |message|
+				subject << message
+			end
+
+			recv_messages.should == sent_messages
+			recv_any_messages.should == sent_messages
+			recv_order.should == [
+				:any, TestMessage,
+				:any, TestMessageA,
+				:any, TestMessageB,
+				:any, TestMessageA,
+				:any, TestMessageB,
+			]
+		end
 	end
 
-	describe "on object type + topic" do
-		it 'should pass only objects of given type and for given topic' do
+	describe "on message type + topic" do
+		it 'should pass only messages of given type and for given topic' do
 			sent_messages = [
 				TestMessage.new(1), 
 				TestMessageA.new(2),
@@ -343,6 +362,41 @@ describe MessageCallbackRegister do
 			recv_messages_a_3.should == [TestMessageA.new(3)]
 			recv_messages_b_3.should == [TestMessageB.new(3)]
 			recv_messages_b_4.should == [TestMessageB.new(4), TestMessageB.new(4)]
+		end
+
+		it 'should pass message to message type callback first' do
+			sent_messages = [
+				TestMessageA.new(1),
+				TestMessageA.new(2),
+				TestMessageA.new(1),
+			]
+			sent_raw_messages = sent_messages.map{|msg| msg.to_message('topic'+ msg.value.to_s).to_s}
+
+			recv_order = []
+			recv_type_messages = []
+			recv_messages = []
+
+			subject.on(TestMessageA, 'topic1') do |message|
+				recv_messages << message
+				recv_order << :topic
+			end
+
+			subject.on(TestMessageA) do |message|
+				recv_type_messages << message
+				recv_order << message
+			end
+
+			sent_raw_messages.each do |message|
+				subject << message
+			end
+
+			recv_messages.should == [TestMessageA.new(1), TestMessageA.new(1)]
+			recv_type_messages.should == sent_messages
+			recv_order.should == [
+				TestMessageA.new(1), :topic,
+				TestMessageA.new(2),
+				TestMessageA.new(1), :topic,
+			]
 		end
 	end
 
