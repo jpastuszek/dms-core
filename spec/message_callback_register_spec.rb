@@ -51,6 +51,25 @@ describe MessageCallbackRegister do
 			recv_messages.should == sent_messages
 		end
 
+		it 'should pass all messages in parsed form with topic' do
+			sent_messages = [TestMessage.new(1), TestMessage.new(2)]
+			sent_raw_messages = sent_messages.map{|msg| msg.to_message('topic'+ msg.value.to_s).to_s}
+			recv_messages = []
+
+			subject.on(:any) do |message, topic|
+				recv_messages << [message, topic]
+			end
+
+			sent_raw_messages.each do |message|
+				subject << message
+			end
+
+			recv_messages.should == [
+				[TestMessage.new(1), 'topic1'],
+				[TestMessage.new(2), 'topic2'],
+			]
+		end
+
 		it 'should not process messages of unknown type' do
 			sent_messages = [
 				TestMessage.new(1), 
@@ -139,6 +158,25 @@ describe MessageCallbackRegister do
 			recv_messages.should == sent_messages.select{|m| m.instance_of? TestMessage}
 			recv_messages_a.should == sent_messages.select{|m| m.instance_of? TestMessageA}
 			recv_messages_b.should == sent_messages.select{|m| m.instance_of? TestMessageB}
+		end
+
+		it 'should pass only messages of given type with topic' do
+			sent_messages = [TestMessage.new(1), TestMessage.new(2)]
+			sent_raw_messages = sent_messages.map{|msg| msg.to_message('topic'+ msg.value.to_s).to_s}
+			recv_messages = []
+
+			subject.on(TestMessage) do |message, topic|
+				recv_messages << [message, topic]
+			end
+
+			sent_raw_messages.each do |message|
+				subject << message
+			end
+
+			recv_messages.should == [
+				[TestMessage.new(1), 'topic1'],
+				[TestMessage.new(2), 'topic2'],
+			]
 		end
 
 		it 'should pass messages to multiple callbacks' do
@@ -274,6 +312,25 @@ describe MessageCallbackRegister do
 			recv_messages_default.should == sent_messages.select{|m| m.instance_of? TestMessageA or m.instance_of? TestMessageB}
 		end
 
+		it 'should pass only objects that does not match any callback for data type with topic' do
+			sent_messages = [TestMessage.new(1), TestMessage.new(2)]
+			sent_raw_messages = sent_messages.map{|msg| msg.to_message('topic'+ msg.value.to_s).to_s}
+			recv_messages = []
+
+			subject.on(:default) do |message, topic|
+				recv_messages << [message, topic]
+			end
+
+			sent_raw_messages.each do |message|
+				subject << message
+			end
+
+			recv_messages.should == [
+				[TestMessage.new(1), 'topic1'],
+				[TestMessage.new(2), 'topic2'],
+			]
+		end
+
 		it 'should pass message to :any callback first' do
 			sent_messages = [
 				TestMessage.new(1), 
@@ -364,6 +421,29 @@ describe MessageCallbackRegister do
 			recv_messages_b_4.should == [TestMessageB.new(4), TestMessageB.new(4)]
 		end
 
+		it 'should pass only objects that does not match any callback for data type with topic' do
+			sent_messages = [TestMessage.new(1), TestMessage.new(2)]
+			sent_raw_messages = sent_messages.map{|msg| msg.to_message('topic'+ msg.value.to_s).to_s}
+			recv_messages = []
+
+			subject.on(TestMessage, 'topic1') do |message, topic|
+				recv_messages << [message, topic]
+			end
+
+			subject.on(TestMessage, 'topic2') do |message, topic|
+				recv_messages << [message, topic]
+			end
+
+			sent_raw_messages.each do |message|
+				subject << message
+			end
+
+			recv_messages.should == [
+				[TestMessage.new(1), 'topic1'],
+				[TestMessage.new(2), 'topic2'],
+			]
+		end
+
 		it 'should pass message to message type callback first' do
 			sent_messages = [
 				TestMessageA.new(1),
@@ -441,6 +521,29 @@ describe MessageCallbackRegister do
 			recv_messages_default_3.should == [TestMessageA.new(3)]
 			recv_messages_b_3.should == [TestMessageB.new(3)]
 			recv_messages_b_4.should == [TestMessageB.new(4), TestMessageB.new(4)]
+		end
+
+		it 'should pass only objects that does not match any callback for data type but for given topic with topic' do
+			sent_messages = [TestMessage.new(1), TestMessage.new(2)]
+			sent_raw_messages = sent_messages.map{|msg| msg.to_message('topic'+ msg.value.to_s).to_s}
+			recv_messages = []
+
+			subject.on(:default, 'topic1') do |message, topic|
+				recv_messages << [message, topic]
+			end
+
+			subject.on(:default, 'topic2') do |message, topic|
+				recv_messages << [message, topic]
+			end
+
+			sent_raw_messages.each do |message|
+				subject << message
+			end
+
+			recv_messages.should == [
+				[TestMessage.new(1), 'topic1'],
+				[TestMessage.new(2), 'topic2'],
+			]
 		end
 	end
 end

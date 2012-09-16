@@ -47,9 +47,9 @@ class MessageCallbackRegister
 			not content.empty?
 		end
 
-		def call(message)
+		def call(message, topic)
 			content.each do |callback|
-				callback.call(message)
+				callback.call(message, topic)
 			end
 		end
 
@@ -118,7 +118,7 @@ class MessageCallbackRegister
 			if node.callers?
 				# cast message to data type if we have parsed message but only if we have callers for it
 				message = DataType.from_message(message) if message.instance_of? Message
-				node.call(message)
+				node.call(message, topic)
 			end
 		end
 	rescue DataType::DataTypeError::UnknownDataTypeError
