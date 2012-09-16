@@ -18,6 +18,7 @@
 require 'ffi-rzmq'
 require 'ffi-rzmq/version'
 require 'set'
+require_relative 'message_callback_register'
 
 module ZeroMQError
 	class OperationFailedError < IOError
