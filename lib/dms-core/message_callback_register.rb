@@ -49,7 +49,11 @@ class MessageCallbackRegister
 
 		def call(message, topic)
 			content.each do |callback|
-				callback.call(message, topic)
+				if topic
+					callback.call(message, topic)
+				else
+					callback.call(message)
+				end
 			end
 		end
 
