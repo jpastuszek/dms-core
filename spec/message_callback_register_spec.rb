@@ -16,9 +16,9 @@
 # along with Distributed Monitoring System.  If not, see <http://www.gnu.org/licenses/>.
 
 require_relative 'spec_helper'
-require 'dms-core/event_callback_register'
+require 'dms-core/message_callback_register'
 
-describe EventCallbackRegister do
+describe MessageCallbackRegister do
 	describe 'on :raw' do
 		it 'should pass all messages in raw form without looking into them' do
 			messages = []

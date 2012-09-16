@@ -17,7 +17,7 @@
 
 require 'rubytree'
 
-class EventCallbackRegister
+class MessageCallbackRegister
 	class Handle
 		def initialize(node, callback)
 			@node = node
