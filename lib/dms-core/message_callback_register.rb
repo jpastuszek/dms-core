@@ -18,14 +18,14 @@
 require 'rubytree'
 
 class MessageCallbackRegister
-	class Handle
+	class MessageCallback
 		def initialize(node, callback)
 			@node = node
 			@callback = callback
 		end
 
 		def close
-			@node.content.delete callback
+			@node.deregister @callback
 		end
 	end
 
@@ -38,6 +38,11 @@ class MessageCallbackRegister
 			content << callback
 		end
 
+		def deregister(callback)
+			content.delete callback
+			cleanup
+		end
+
 		def callers?
 			not content.empty?
 		end
@@ -45,6 +50,19 @@ class MessageCallbackRegister
 		def call(message)
 			content.each do |callback|
 				callback.call(message)
+			end
+		end
+
+		def cleanup
+			node = self
+			until node.is_root?
+				if node.is_leaf? and not node.callers?
+					parent = node.parent
+					node.remove_from_parent!
+					node = parent
+				else
+					break
+				end
 			end
 		end
 	end
@@ -68,7 +86,7 @@ class MessageCallbackRegister
 		end
 
 		node.register(callback)
-		return Handle.new(node, callback)
+		return MessageCallback.new(node, callback)
 	end
 
 	def <<(raw_message)
@@ -116,7 +134,6 @@ class MessageCallbackRegister
 			node << CallbackNode.new(name) unless node[name]
 			node = node[name]
 		end
-		#@callback_tree.print_tree
 		node
 	end
 end

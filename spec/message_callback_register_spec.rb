@@ -445,3 +445,94 @@ describe MessageCallbackRegister do
 	end
 end
 
+describe MessageCallbackRegister::MessageCallback do
+	subject do
+		MessageCallbackRegister::MessageCallback
+	end
+
+	it 'should be returned by every on call' do
+		MessageCallbackRegister.new.on(:raw){}.should be_instance_of subject
+		MessageCallbackRegister.new.on(:any){}.should be_instance_of subject
+		MessageCallbackRegister.new.on(:default){}.should be_instance_of subject
+		MessageCallbackRegister.new.on(TestMessage){}.should be_instance_of subject
+		MessageCallbackRegister.new.on(TestMessage, 'topic2'){}.should be_instance_of subject
+		MessageCallbackRegister.new.on(:default, 'topic2'){}.should be_instance_of subject
+	end
+
+	it 'should allow deregistration of the callback via #close' do
+		sent_messages = [
+			TestMessage.new(1), 
+			TestMessageA.new(2),
+			TestMessageB.new(3),
+			TestMessageA.new(3),
+			TestMessageB.new(4),
+			TestMessageB.new(4),
+		]
+		sent_raw_messages = sent_messages.map{|msg| msg.to_message('topic'+ msg.value.to_s).to_s}
+		message_callback_register = MessageCallbackRegister.new
+
+		recv_raw_messages = []
+		recv_any_messages = []
+		recv_default1_messages = []
+		recv_default2_messages = []
+
+		on_raw = message_callback_register.on(:raw) do |message|
+			recv_raw_messages << message
+		end 
+
+		on_any = message_callback_register.on(:any) do |message| 
+			recv_any_messages << message
+		end
+
+		on_default1 = message_callback_register.on(:default) do |message|
+			recv_default1_messages << message
+		end
+
+		on_default2 = message_callback_register.on(:default) do |message|
+			recv_default2_messages << message
+		end
+
+		raw_messages = sent_raw_messages.dup
+
+		message_callback_register << raw_messages.shift
+		message_callback_register << raw_messages.shift
+
+		recv_raw_messages.should == sent_raw_messages.take(2)
+		recv_any_messages.should == sent_messages.take(2)
+		recv_default1_messages.should == sent_messages.take(2)
+		recv_default2_messages.should == sent_messages.take(2)
+
+		on_any.close
+
+		message_callback_register << raw_messages.shift
+		recv_raw_messages.should == sent_raw_messages.take(3)
+		recv_any_messages.should == sent_messages.take(2)
+		recv_default1_messages.should == sent_messages.take(3)
+		recv_default2_messages.should == sent_messages.take(3)
+
+		on_default1.close
+
+		message_callback_register << raw_messages.shift
+		recv_raw_messages.should == sent_raw_messages.take(4)
+		recv_any_messages.should == sent_messages.take(2)
+		recv_default1_messages.should == sent_messages.take(3)
+		recv_default2_messages.should == sent_messages.take(4)
+
+		on_default2.close
+
+		message_callback_register << raw_messages.shift
+		recv_raw_messages.should == sent_raw_messages.take(5)
+		recv_any_messages.should == sent_messages.take(2)
+		recv_default1_messages.should == sent_messages.take(3)
+		recv_default2_messages.should == sent_messages.take(4)
+
+		on_raw.close
+
+		message_callback_register << raw_messages.shift
+		recv_raw_messages.should == sent_raw_messages.take(5)
+		recv_any_messages.should == sent_messages.take(2)
+		recv_default1_messages.should == sent_messages.take(3)
+		recv_default2_messages.should == sent_messages.take(4)
+	end
+end
+
