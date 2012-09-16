@@ -140,9 +140,7 @@ class ZeroMQ
 
 	module Receiver
 		def receiver_init(options)
-			@data_type_callbacks = {}
-			@raw_callbacks = []
-			@othre_callbacks = []
+			@message_callback_register = MessageCallbackRegister.new
 
 			ok? @socket.setsockopt(ZMQ::HWM, options[:hwm] || 1000)
 			ok? @socket.setsockopt(ZMQ::SWAP, options[:swap] || 0)
@@ -150,41 +148,23 @@ class ZeroMQ
 		end
 
 		def on_raw(&callback)
-			@raw_callbacks << callback
+			@message_callback_register.on(:raw, &callback)
 			self
 		end
 
 		def on(data_type, &callback)
-			(@data_type_callbacks[data_type] ||= []) << callback
+			@message_callback_register.on(data_type, &callback)
 			self
 		end
 
 		def on_other(&callback)
-			@othre_callbacks << callback
+			@message_callback_register.on(:default, &callback)
 			self
 		end
 
 		def receive!
 			begin
-				raw_message = recv_raw
-				@raw_callbacks.each do |callback|
-					callback.call(raw_message)
-				end
-
-				unless @data_type_callbacks.empty? and @othre_callbacks.empty?
-					message = Message.load(raw_message)
-					data_type = DataType.from_message(message)
-
-					if callbacks = @data_type_callbacks[data_type.class]
-						callbacks.each do |callback|
-							callback.call(data_type, message.topic)
-						end
-					else
-						@othre_callbacks.each do |callback|
-							callback.call(data_type, message.topic)
-						end
-					end
-				end
+				@message_callback_register << recv_raw 
 			end while more?
 			self
 		end
@@ -236,28 +216,13 @@ class ZeroMQ
 		end
 
 		def on(data_type, topic = '', &callback)
-			unless @on_handlers.has_key? data_type
-				@on_handlers[data_type] = {}
-
-				# set callback on data_type
-				super data_type do |message, topic|
-					# find topic handler if any
-					on_topic = @on_handlers[data_type]
-					if topic != '' and on_topic.has_key? topic
-						on_topic[topic].call(message, topic)
-					end
-
-					# call on all topic handler
-					if on_topic.has_key? ''
-						on_topic[''].call(message, topic)
-					end
-				end
+			if topic.empty?
+				@message_callback_register.on(data_type, &callback)
+			else
+				@message_callback_register.on(data_type, topic, &callback)
 			end
 
-			on_topic = @on_handlers[data_type]
-			subscribe(data_type, topic) unless on_topic.has_key? topic
-			# this allows only one data_type/topic pair callback to be set
-			on_topic[topic] = callback
+			subscribe(data_type, topic)
 			self
 		end
 
