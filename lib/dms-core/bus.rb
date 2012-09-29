@@ -49,16 +49,12 @@ class Bus
 		@pub = pub
 	end
 
-	def on(data_type, topic = '', &callback)
+	def on(data_type, topic = nil, &callback)
 		@sub.on(data_type, topic, &callback)
 	end
 
 	def send(data_type, options = {})
 		@pub.send(data_type, options)
-	end
-
-	def on_raw(&callback)
-		@sub.on_raw(&callback)
 	end
 
 	def send_raw(string, options = {})

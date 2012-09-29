@@ -148,18 +148,8 @@ class ZeroMQ
 			ok? @socket.setsockopt(ZMQ::SNDBUF, options[:buffer] || 0)
 		end
 
-		def on_raw(&callback)
-			@message_callback_register.on(:raw, &callback)
-			self
-		end
-
-		def on(data_type, &callback)
-			@message_callback_register.on(data_type, &callback)
-			self
-		end
-
-		def on_other(&callback)
-			@message_callback_register.on(:default, &callback)
+		def on(data_type, topic = nil, &callback)
+			@message_callback_register.on(data_type, topic, &callback)
 			self
 		end
 
@@ -211,25 +201,14 @@ class ZeroMQ
 			have? socket = context.socket(ZMQ::SUB)
 			super socket do
 				receiver_init(options)
-				@on_handlers = {}
 				yield self
 			end
 		end
 
-		def on(data_type, topic = '', &callback)
-			if topic.empty?
-				@message_callback_register.on(data_type, &callback)
-			else
-				@message_callback_register.on(data_type, topic, &callback)
-			end
-
-			subscribe(data_type, topic)
+		def on(data_type, topic = nil, &callback)
+			super
+			subscribe(data_type.is_a?(Symbol) ? nil : data_type, topic)
 			self
-		end
-
-		def on_raw(&callback)
-			subscribe
-			super &callback
 		end
 
 		private
@@ -238,8 +217,9 @@ class ZeroMQ
 		# '' - for all
 		# 'DataType/' - for given object, all topics
 		# 'DataType/topic\n' - given object, given topic
-		def subscribe(data_type = nil, topic = '')
-			ok? @socket.setsockopt(ZMQ::SUBSCRIBE, ! data_type ? '' : "#{data_type}/#{topic.empty? ? '' : topic + "\n"}")
+		def subscribe(data_type = nil, topic = nil)
+			topic_string = data_type ? "#{data_type}/#{topic ? topic + "\n" : ''}" : ''
+			ok? @socket.setsockopt(ZMQ::SUBSCRIBE, topic_string)
 			self
 		end
 	end
@@ -277,7 +257,7 @@ class ZeroMQ
 				sender_init(options)
 				receiver_init(options)
 				@response_callback = nil
-				on_other do |message|
+				on(:any) do |message|
 					@response_callback.call(message) if @response_callback
 				end
 				yield self

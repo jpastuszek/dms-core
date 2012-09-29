@@ -51,7 +51,7 @@ describe ZeroMQ do
 						push.send_raw 'hello world'
 					end
 
-					pull.on_raw do |msg|
+					pull.on(:raw) do |msg|
 						message = msg
 					end.receive!
 				end
@@ -163,7 +163,7 @@ describe ZeroMQ do
 							end
 						end
 
-						sub.on_raw do |msg|
+						sub.on(:raw) do |msg|
 							message = msg
 						end.receive!
 
@@ -292,7 +292,7 @@ describe ZeroMQ do
 						cpu_topic_messages << message
 					end
 
-					sub.on RawDataPoint, '' do |message, topic|
+					sub.on RawDataPoint do |message, topic|
 						all_messages << message
 					end
 
