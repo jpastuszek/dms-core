@@ -149,7 +149,6 @@ class ZeroMQ
 
 		def on(data_type, topic = nil, &callback)
 			@message_callback_register.on(data_type, topic, &callback)
-			self
 		end
 
 		def receive!
@@ -205,9 +204,9 @@ class ZeroMQ
 		end
 
 		def on(data_type, topic = nil, &callback)
-			super
+			callback = super
 			subscribe(data_type.is_a?(Symbol) ? nil : data_type, topic)
-			self
+			callback
 		end
 
 		private

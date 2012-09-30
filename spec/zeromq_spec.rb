@@ -30,6 +30,10 @@ describe ZeroMQ do
 		RawDataPoint.new('magi', 'system/CPU usage', 'user', 123, Time.at(2.5))
 	end
 
+	let :test_hello do
+		Hello.new('localhost', 'abc', 123)
+	end
+
 	it "should provide libzmq version" do
 		ZeroMQ.lib_version.should match(/\d+\.\d+\.\d+/)
 	end
@@ -151,6 +155,38 @@ describe ZeroMQ do
 			message.component.should == 'user'
 			message.time_stamp.should == Time.at(2.5).utc
 			message.value.should == 123
+		end
+
+		it 'should allow closing on handler' do
+			messages = []
+
+			ZeroMQ.new do |zmq|
+				zmq.pull_bind(test_address) do |pull|
+					zmq.push_connect(test_address) do |push|
+						push.send test_raw_data_point
+						push.send test_hello
+						push.send test_raw_data_point
+						push.send test_hello
+					end
+
+					pull.on(Hello) do |msg|
+						messages << msg.class
+					end
+					
+					rdp = pull.on(RawDataPoint) do |msg|
+						messages << msg.class
+					end
+
+					pull.receive!
+					pull.receive!
+					
+					rdp.close
+					pull.receive!
+					pull.receive!
+				end
+			end
+
+			messages.should == [RawDataPoint, Hello, Hello]
 		end
 	end
 
@@ -363,6 +399,38 @@ describe ZeroMQ do
 			message.component.should == 'user'
 			message.time_stamp.should == Time.at(2.5).utc
 			message.value.should == 123
+		end
+
+		it 'should allow closing on handler' do
+			messages = []
+
+			ZeroMQ.new do |zmq|
+				zmq.sub_bind(test_address) do |sub|
+					zmq.pub_connect(test_address) do |pub|
+							pub.send test_raw_data_point
+							pub.send test_hello
+							pub.send test_raw_data_point
+							pub.send test_hello
+					end
+
+					sub.on(Hello) do |msg|
+						messages << msg.class
+					end
+					
+					rdp = sub.on(RawDataPoint) do |msg|
+						messages << msg.class
+					end
+
+					sub.receive!
+					sub.receive!
+
+					rdp.close
+					sub.receive!
+					sub.receive!
+				end
+			end
+
+			messages.should == [RawDataPoint, Hello, Hello]
 		end
 	end
 
