@@ -72,7 +72,9 @@ describe ZeroMQ do
 					messages = []
 					pull.on RawDataPoint do |raw_data_point|
 						messages << raw_data_point
-					end.receive!
+					end
+					
+					pull.receive!
 
 					messages.should have(2).messages
 
@@ -191,7 +193,9 @@ describe ZeroMQ do
 
 						sub.on RawDataPoint do |raw_data_point|
 							message = raw_data_point
-						end.receive!
+						end
+						
+						sub.receive!
 
 						thread.kill
 					end
@@ -220,7 +224,9 @@ describe ZeroMQ do
 
 						sub.on RawDataPoint do |raw_data_point|
 							message = raw_data_point
-						end.receive!
+						end
+						
+						sub.receive!
 
 						thread.kill
 					end
@@ -240,14 +246,14 @@ describe ZeroMQ do
 
 			ZeroMQ.new do |zmq|
 				zmq.sub_bind(test_address) do |sub|
-					sub.on RawDataPoint, 'hello' do |msg, topic|
-						messages << msg
-						topics << topic
-					end
-
 					zmq.pub_connect(test_address) do |pub|
 						pub.send test_raw_data_point2, topic: 'hello world'
 						pub.send test_raw_data_point, topic: 'hello'
+					end
+
+					sub.on RawDataPoint, 'hello' do |msg, topic|
+						messages << msg
+						topics << topic
 					end
 
 					sub.receive!
