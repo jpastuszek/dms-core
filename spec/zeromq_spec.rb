@@ -235,34 +235,14 @@ describe ZeroMQ do
 		end
 
 		it 'should allow sending and receinving RawDataPoint object - with topic' do
-			message = nil
-
-			ZeroMQ.new do |zmq|
-				zmq.sub_bind(test_address) do |sub|
-					sub.on RawDataPoint, 'hello world' do |msg, topic|
-						message = msg
-						topic.should == 'hello world'
-					end
-
-					zmq.pub_connect(test_address) do |pub|
-						pub.send test_raw_data_point, topic: 'hello world'
-					end
-
-					sub.receive!
-				end
-			end
-
-			message.should be_a RawDataPoint
-			message.path.should == 'system/memory'
-			message.component.should == 'cache'
-			message.time_stamp.should == Time.at(2.5).utc
-			message.value.should == 123
+			messages = []
+			topics = []
 
 			ZeroMQ.new do |zmq|
 				zmq.sub_bind(test_address) do |sub|
 					sub.on RawDataPoint, 'hello' do |msg, topic|
-						message = msg
-						topic = 'hello'
+						messages << msg
+						topics << topic
 					end
 
 					zmq.pub_connect(test_address) do |pub|
@@ -274,11 +254,18 @@ describe ZeroMQ do
 				end
 			end
 
+			messages.should have(1).message
+			topics.should have(1).topic
+
+			message = messages.shift
+			topic = topics.shift
+
 			message.should be_a RawDataPoint
 			message.path.should == 'system/memory'
 			message.component.should == 'cache'
 			message.time_stamp.should == Time.at(2.5).utc
 			message.value.should == 123
+			topic.should == 'hello'
 		end
 
 		it 'should pass topic messages to on handler with same topic' do
