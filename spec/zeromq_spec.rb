@@ -48,12 +48,14 @@ describe ZeroMQ do
 			ZeroMQ.new do |zmq|
 				zmq.pull_bind(test_address) do |pull|
 					zmq.push_connect(test_address) do |push|
-						push.send_raw 'hello world'
+						push.send 'hello world'
 					end
 
 					pull.on(:raw) do |msg|
 						message = msg
-					end.receive!
+					end
+					
+					pull.receive!
 				end
 			end
 			message.should == 'hello world'
@@ -158,14 +160,16 @@ describe ZeroMQ do
 					zmq.pub_connect(test_address) do |pub|
 						thread = Thread.new do
 							loop do
-								pub.send_raw 'hello world'
+								pub.send 'hello world'
 								sleep 0.1
 							end
 						end
 
 						sub.on(:raw) do |msg|
 							message = msg
-						end.receive!
+						end
+						
+						sub.receive!
 
 						thread.kill
 					end

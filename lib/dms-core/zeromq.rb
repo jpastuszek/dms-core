@@ -126,15 +126,12 @@ class ZeroMQ
 			ok? @socket.setsockopt(ZMQ::LINGER, ((options[:linger] || 10) * 1000).to_i)
 		end
 
-		def send(data_type, options = {})
-			topic = options[:topic] || nil
-			send_raw(data_type.to_message(topic).to_s, options)
-		end
+		def send(data, options = {})
+			data = data.to_message(options[:topic]) if data.is_a? DataType
 
-		def send_raw(string, options = {})
 			flags = 0
 			flags |= ZMQ::SNDMORE if options[:more]
-			ok? @socket.send_string(string, flags)
+			ok? @socket.send_string(data.to_s, flags)
 			self
 		end
 	end
