@@ -103,12 +103,13 @@ class ZeroMQ
 
 		def close
 			return if closed?
+			# call only once
+			@closed = true
 			
 			# call callbacks before socket gets closed/unusable
 			@on_close.shift.call(self) until @on_close.empty?
 
 			ok? @socket.close
-			@closed = true
 		end
 
 		def on_close(&callback)
