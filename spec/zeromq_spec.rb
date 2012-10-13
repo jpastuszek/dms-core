@@ -426,7 +426,7 @@ describe ZeroMQ do
 
 					rdp.close
 					sub.receive!
-					sub.receive!
+					# sub.receive! - unsubscribed
 				end
 			end
 

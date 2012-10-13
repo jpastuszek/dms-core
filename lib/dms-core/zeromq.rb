@@ -207,6 +207,9 @@ class ZeroMQ
 		def on(data_type, topic = nil, &callback)
 			callback = super
 			subscribe(data_type.is_a?(Symbol) ? nil : data_type, topic)
+			callback.on_close do
+				unsubscribe(data_type.is_a?(Symbol) ? nil : data_type, topic)
+			end
 			callback
 		end
 
@@ -218,7 +221,15 @@ class ZeroMQ
 		# 'DataType/topic\n' - given object, given topic
 		def subscribe(data_type = nil, topic = nil)
 			topic_string = data_type ? "#{data_type}/#{topic ? topic + "\n" : ''}" : ''
+			#puts "sub: #{topic_string}"
 			ok? @socket.setsockopt(ZMQ::SUBSCRIBE, topic_string)
+			self
+		end
+
+		def unsubscribe(data_type = nil, topic = nil)
+			topic_string = data_type ? "#{data_type}/#{topic ? topic + "\n" : ''}" : ''
+			#puts "unsub: #{topic_string}"
+			ok? @socket.setsockopt(ZMQ::UNSUBSCRIBE, topic_string)
 			self
 		end
 	end
