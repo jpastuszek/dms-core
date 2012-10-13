@@ -22,10 +22,16 @@ class MessageCallbackRegister
 		def initialize(node, callback)
 			@node = node
 			@callback = callback
+			@on_close = []
 		end
 
 		def close
+			@on_close.shift.call until @on_close.empty?
 			@node.deregister @callback
+		end
+
+		def on_close(&callback)
+			@on_close << callback
 		end
 	end
 

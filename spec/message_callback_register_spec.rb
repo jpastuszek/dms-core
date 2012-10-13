@@ -637,5 +637,26 @@ describe MessageCallbackRegister::MessageCallback do
 		recv_default1_messages.should == sent_messages.take(3)
 		recv_default2_messages.should == sent_messages.take(4)
 	end
+
+	it 'should allow hooking callback that will be executed once on close' do
+		message_callback_register = MessageCallbackRegister.new
+		calls = []
+
+		on_raw = message_callback_register.on(:raw) {}
+
+		on_raw.on_close do
+			calls << 1
+		end
+
+		on_raw.on_close do
+			calls << 2
+		end
+
+		on_raw.close
+		calls.should == [1, 2]
+
+		on_raw.close
+		calls.should == [1, 2]
+	end
 end
 
