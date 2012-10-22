@@ -59,6 +59,7 @@ describe ZeroMQ do
 						message = msg
 					end
 					
+					#TODO: hangs here sometimes (mac)
 					pull.receive!
 				end
 			end
@@ -431,6 +432,47 @@ describe ZeroMQ do
 			end
 
 			messages.should == [RawDataPoint, Hello, Hello]
+		end
+
+		it 'it should only unsubscribe from single callback' do
+			messages1 = []
+			messages2 = []
+			messages3 = []
+
+			ZeroMQ.new do |zmq|
+				zmq.sub_bind(test_address) do |sub|
+					zmq.pub_connect(test_address) do |pub|
+							pub.send test_hello
+							pub.send test_hello
+							pub.send test_hello
+							pub.send test_hello
+					end
+
+					sub.on(Hello) do |msg|
+						messages1 << msg.class
+					end
+					
+					rdp = sub.on(Hello) do |msg|
+						messages2 << msg.class
+					end
+
+					any = sub.on(:any) do |msg|
+						messages3 << msg.class
+					end
+					
+					sub.receive!
+					sub.receive!
+
+					rdp.close
+					sub.receive!
+					any.close
+					sub.receive!
+				end
+			end
+
+			messages1.should == [Hello, Hello, Hello, Hello]
+			messages2.should == [Hello, Hello]
+			messages3.should == [Hello, Hello, Hello]
 		end
 	end
 
