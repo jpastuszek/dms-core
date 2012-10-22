@@ -18,6 +18,7 @@
 require 'ffi-rzmq'
 require 'ffi-rzmq/version'
 require 'set'
+require 'periodic-scheduler'
 require_relative 'message_callback_register'
 
 module ZeroMQError
@@ -290,51 +291,10 @@ class ZeroMQ
 	class Poller
 		include ZeroMQError
 
-		class Timers < SortedSet
-			class Timer
-				def initialize(at, &callback)
-					@at = at
-					@callback = callback
-				end
-
-				attr_reader :at
-
-				def remaining
-					@at - Time.now
-				end
-
-				def call
-					@callback.call
-				end
-
-				def <=>(x)
-					@at <=> x.at
-				end
-			end
-
-			def after(time, &callback)
-				self << Timer.new(Time.now + time, &callback)
-			end
-
-			def wait
-				loop do
-					while timer = first and timer.remaining <= 0
-						timer.call
-						delete(timer)
-						return true
-					end
-					return false if empty?
-
-					# sleep
-					yield first.remaining
-				end
-			end
-		end
-
 		def initialize
 			@sockets = {}
 			@poller = ZMQ::Poller.new
-			@timers = Timers.new
+			@scheduler = PeriodicScheduler.new(0.001, wait_function: method(:poll_message))
 		end
 
 		def <<(object)
@@ -348,19 +308,36 @@ class ZeroMQ
 		end
 
 		def after(time, &callback)
-			@timers.after(time, &callback)
+			@scheduler.schedule(time, false) do
+				callback.call
+				nil
+			end
+		end
+
+		def every(time, &callback)
+			@scheduler.schedule(time, true) do
+				callback.call
+				nil
+			end
 		end
 
 		def poll(timeout = nil)
-			@timers.wait do |time_remaining|
-				break if timeout and timeout < time_remaining
-				poll_message(time_remaining) and return :message
-			end and return :timer
+			@scheduler.schedule(timeout){:timeout} if timeout
 
-			if poll_message(timeout)
+			# nothing scheduled, wait for message
+			if @scheduler.empty?
+				poll_message
 				return :message
-			else
+			end
+
+			objects = @scheduler.run
+			if objects.empty?
+				# poll_message returned quickly - got message
+				return :message
+			elsif objects.include? :timeout
 				return false
+			else
+				return :timer
 			end
 		end
 
@@ -382,9 +359,19 @@ class ZeroMQ
 		private
 
 		def poll_message(timeout = nil)
-			timeout *= 1000 if timeout
-			ok? @poller.poll(timeout || :blocking)
-			return false if @poller.readables.empty? and @poller.writables.empty?
+			if timeout
+				# poller returns immediately if empty
+				if @poller.size == 0
+					sleep timeout
+					return false
+				end 
+
+				timeout *= 1000 if timeout
+				ok? @poller.poll(timeout)
+				return false if @poller.readables.empty? and @poller.writables.empty?
+			else
+				ok? @poller.poll(:blocking)
+			end
 
 			@poller.readables.each do |socket|
 				@sockets[socket].receive!

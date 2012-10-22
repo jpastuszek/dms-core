@@ -1,3 +1,8 @@
+PATH
+  remote: ../periodic-scheduler
+  specs:
+    periodic-scheduler (0.3.0)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -57,6 +62,7 @@ DEPENDENCIES
   jeweler (~> 1.8.3)
   logging (~> 1.7.0)
   msgpack (~> 0.4.6)
+  periodic-scheduler!
   rdoc (~> 3.12)
   retry-this (~> 1.1)
   rspec (~> 2.8.0)
