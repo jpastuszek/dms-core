@@ -330,7 +330,10 @@ class ZeroMQ
 				return :message
 			end
 
-			objects = @scheduler.run
+			objects = @scheduler.run do |error|
+				log.error "poller timer event raised error", error
+			end
+
 			if objects.empty?
 				# poll_message returned quickly - got message
 				return :message
