@@ -308,21 +308,21 @@ class ZeroMQ
 		end
 
 		def after(time, &callback)
-			@scheduler.schedule(time, false) do
+			@scheduler.after(time) do
 				callback.call
 				nil
 			end
 		end
 
 		def every(time, &callback)
-			@scheduler.schedule(time, true) do
+			@scheduler.every(time) do
 				callback.call
 				nil
 			end
 		end
 
 		def poll(timeout = nil)
-			@scheduler.schedule(timeout){:timeout} if timeout
+			@scheduler.after(timeout){:timeout} if timeout
 
 			# nothing scheduled, wait for message
 			if @scheduler.empty?

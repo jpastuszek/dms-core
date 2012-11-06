@@ -6,7 +6,7 @@ gem "logging", "~> 1.7.0"
 gem "cli", "~> 1.1.1"
 gem "facter", "~> 1.6.5"
 gem "rubytree", "~> 0.8.3"
-gem "periodic-scheduler", "~> 0.4"
+gem "periodic-scheduler", "~> 0.6"
 
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.
