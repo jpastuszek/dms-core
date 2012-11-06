@@ -322,7 +322,7 @@ class ZeroMQ
 		end
 
 		def poll(timeout = nil)
-			@scheduler.after(timeout){:timeout} if timeout
+			timeout = @scheduler.after(timeout){:timeout} if timeout
 
 			# nothing scheduled, wait for message
 			if @scheduler.empty?
@@ -333,6 +333,9 @@ class ZeroMQ
 			objects = @scheduler.run do |error|
 				log.error "poller timer event raised error", error
 			end
+
+			# cancel running time out
+			timeout.stop if timeout
 
 			if objects.empty?
 				# poll_message returned quickly - got message

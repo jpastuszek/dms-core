@@ -39,17 +39,30 @@ class BusDetector
 	
 	def discover(time_out, delay = 0.1)
 		@ready = nil
-		end_time = Time.now + time_out.to_f
-		next_discover = Time.now
-		loop do
-			if next_discover <= Time.now
-				log.debug "sending #{@discover}"
-				@bus.send @discover, topic: @program_id
-				next_discover += delay
-			end
-			break if @poller.poll(delay) and ready?
-			raise NoBusError if end_time <= Time.now
+		@timeout = nil
+
+		sending = @poller.every(delay) do
+			log.debug "sending #{@discover}"
+			@bus.send @discover, topic: @program_id
 		end
+
+		timeout = @poller.after(time_out) do
+			log.debug "got time out (#{time_out})"
+			@timeout = true
+		end
+
+		while @poller.poll
+			return if ready?
+			break if timeout?
+		end
+		raise NoBusError
+	ensure
+		sending.stop
+		timeout.stop
+	end
+
+	def timeout?
+		@timeout
 	end
 
 	def ready?
@@ -58,7 +71,7 @@ class BusDetector
 end
 
 class Bus
-	def ready!(program_id, time_out = 4, poller = ZeroMQ::Poller.new)
+	def ready!(program_id, time_out = 4.0, poller = ZeroMQ::Poller.new)
 		BusDetector.new(program_id, self, poller).discover(time_out)
 	end
 end

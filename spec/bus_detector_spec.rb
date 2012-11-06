@@ -39,7 +39,7 @@ describe BusDetector do
 
 					Bus.connect(zmq, publisher_address, subscriber_address) do |bus|
 						poller << sub
-						BusDetector.new('test-program', bus, poller).discover(4)
+						BusDetector.new('test-program', bus, poller).discover(4.0)
 					end
 				end
 			end
