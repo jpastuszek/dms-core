@@ -30,16 +30,17 @@ class ProgramList
 		def initialize(name)
 			@name = name
 			@args = []
+			@options = {}
 		end
 
 		def spawn
 			terminate
-			@program = SpawnProgram.new("bin/#{@name}", Shellwords.join(@args))
+			@program = SpawnProgram.new("bin/#{@name}", Shellwords.join(@args), @options)
 		end
 
 		def load
 			terminate
-			@program = LoadProgram.new("bin/#{@name}", Shellwords.join(@args))
+			@program = LoadProgram.new("bin/#{@name}", Shellwords.join(@args), @options)
 		end
 
 		def <<(arg)
@@ -48,6 +49,10 @@ class ProgramList
 
 		def terminate
 			@program.terminate if @program
+		end
+
+		def print_output
+			@options[:print_output] = true
 		end
 
 		def method_missing(name, *args)
@@ -114,7 +119,7 @@ class ProgramBase
 end
 
 class SpawnProgram < ProgramBase
-	def initialize(program, args = '')
+	def initialize(program, args = '', options = {})
 		#puts ">> spawning #{program} #{args}"
 		r, w = IO.pipe
 		@pid = Process.spawn("bundle exec #{program} #{args}", :out => w, :err => w)
@@ -124,7 +129,7 @@ class SpawnProgram < ProgramBase
 		@thread = Thread.new do
 			r.each_line do |line|
 				yield line if block_given?
-				#puts line
+				puts line if options[:print_output]
 				@out_queue << line
 			end
 		end
@@ -155,7 +160,7 @@ class SpawnProgram < ProgramBase
 end
 
 class LoadProgram < ProgramBase
-	def initialize(program, args = '')
+	def initialize(program, args = '', options = {})
 		program = Pathname.new(program)
 		@pid_file = Pathname.new('/tmp') + program.basename.sub_ext('.pid')
 		@log_file = Pathname.new('/tmp') + program.basename.sub_ext('.log')

@@ -31,6 +31,10 @@ Given /([^ ]*) is terminated/ do |program|
 	(@programs ||= ProgramList.new)[program].terminate
 end
 
+Given /([^ ]*) will print it's output/ do |program|
+	(@programs ||= ProgramList.new)[program].print_output
+end
+
 When /([^ ]*) is running/ do |program|
 	(@programs ||= ProgramList.new)[program].spawn
 end
